@@ -1,3 +1,4 @@
+import logging
 import os
 
 from dotenv import load_dotenv
@@ -12,3 +13,7 @@ if not MONGODB_URI:
 
 if not MONGODB_DB_NAME:
     raise ValueError("MONGODB_DB_NAME is not set in .env")
+
+logging.info(f"Successfully connected to MongoDB URI: {MONGODB_URI}")
+
+logging.info(f"Successfully connected to MongoDB database: {MONGODB_DB_NAME}")
