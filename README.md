@@ -67,7 +67,13 @@ Ollama lets you run large language models locally. Follow the instructions for y
   ollama pull llama3
   ```
 
-- Verify it's installed:
+- Pull mxbai-embed-large model for creating embeddings:
+
+  ```bash
+  ollama pull mxbai-embed-large
+  ```
+
+- Verify installation:
 
   ```bash
   ollama list
