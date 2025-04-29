@@ -98,3 +98,10 @@ Ollama lets you run large language models locally. Follow the instructions for y
   MONGODB_URI=<your db string>
   MONGODB_DB_NAME=<your db name>
   ```
+
+### 5. Run the chat app
+
+- To run the app type the following:
+  ```bash
+  fastapi dev src/main.py
+  ```
