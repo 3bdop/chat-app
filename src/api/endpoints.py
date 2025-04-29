@@ -19,12 +19,24 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 model = OllamaLLM(model="llama3")
 
 template = """
-You will be an assistant for any questions about Ebla Computer Consultancy
+You are an assistant for Ebla Computer Consultancy. Use the following pieces of context to answer the question at the end.
+If you don't know the answer, just say you don't know, don't try to make up an answer.
 
-Here are some relevant answers: {data}
+Relevant Context: {data}
 
-Here is the answer to your question: {question}
+Chat History (most recent first): {history}
+
+Current Question: {question}
 """
+# template = """
+# You will be an assistant for any questions about Ebla Computer Consultancy
+
+# Here are some relevant answers: {data}
+
+# Here is the answer to your question: {question}
+
+# Here is the chat history: {history}
+# """
 
 prompt = ChatPromptTemplate.from_template(template)
 chain = prompt | model
@@ -54,9 +66,25 @@ async def ask_question(
         if question.lower() in ("e", "exit", "bye"):
             return AnswerResponse(answer="Goodbye! 👋", session_id=session_id or "")
 
+        # Get history if chat session exists
+        history_context = ""
+        if session_id:
+            history = await mongo_manager.get_chat_history_dict(session_id)
+            if history:
+                # Format history into conversation context
+                history_pairs = zip(history["questions"], history["answers"])
+                history_context = "\n".join(
+                    [
+                        f"Previous Question: {q['content']}\nPrevious Answer: {a['content']}"
+                        for q, a in history_pairs
+                    ]
+                )
+
         # Generate response
         data = retriever.invoke(question)
-        response = chain.invoke({"data": data, "question": question})
+        response = chain.invoke(
+            {"data": data, "question": question, "history": history_context}
+        )
 
         # Create messages
         user_message = Message(content=question, is_user=True)
@@ -91,3 +119,11 @@ async def get_all_sessions():
     """Get all session IDs from MongoDB"""
     sessions = await mongo_manager.chat_history.distinct("session_id")
     return sessions
+
+
+@router.get("/history/{session_id}")
+async def get_chat_history(session_id: str):
+    history = await mongo_manager.get_chat_history_dict(session_id)
+    if not history:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return history
