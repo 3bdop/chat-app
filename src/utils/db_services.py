@@ -56,22 +56,25 @@ class MongoDBManager:
         """Get all unique session IDs"""
         return await self.chat_history.distinct("session_id")
 
+    async def get_chat_history_dict(self, session_id: str) -> Optional[dict]:
+        """Get chat history in {questions: [], answers: []} format"""
+        session = await self.get_chat_session(session_id)
+        if not session:
+            return None
+
+        history = {"questions": [], "answers": []}
+
+        for message in session.messages:
+            if message.is_user:
+                history["questions"].append(
+                    {"content": message.content, "timestamp": message.timestamp}
+                )
+            else:
+                history["answers"].append(
+                    {"content": message.content, "timestamp": message.timestamp}
+                )
+
+        return history
+
 
 mongo_manager = MongoDBManager(MONGODB_URI, MONGODB_DB_NAME)
-
-# mongo_manager = MongoDBManager()
-# def connect_to_mongo(uri: str, db_name: str):
-#     """
-#     Connect to the MongoDB database using the provided URI and database name.
-#     """
-#     try:
-#         client = MongoClient(uri)
-#         db = client[db_name]
-#         logging.info(f"Successfully connected to MongoDB database: {db_name}")
-#         return db
-#     except Exception as e:
-#         logging.error("Error connecting to MongoDB: %s", e)
-#         raise
-#         logging.error("Error connecting to MongoDB: %s", e)
-#         raise
-#         raise
