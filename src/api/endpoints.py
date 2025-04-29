@@ -46,7 +46,7 @@ async def index(request: Request):
 async def ask_question(question: str = Form(...)):
     try:
         """Endpoint to ask questions about Ebla Computer Consultancy"""
-        if question.lower() == "e" or question.lower() == "bye":
+        if question.lower() in ("e", "exit", "bye"):
             return AnswerResponse(answer="Goodbye! 👋")
 
         # Retrieve relevant data and generate response
