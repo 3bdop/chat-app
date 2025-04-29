@@ -20,11 +20,11 @@ This project was created to gain a **practical understanding of how Retrieval-Au
 
 ## 🖥️ Features
 
-- 🔹 Clean chatbot UI for interaction
-- 🔹 Session-based chat history with memory (stored in MongoDB)
-- 🔹 Vector search integration using Chroma
-- 🔹 Ollama model for natural language responses
-- 🔹 Built with modular FastAPI backend
+- Clean chatbot UI for interaction
+- Session-based chat history with memory (stored in MongoDB)
+- Vector search integration using Chroma
+- Ollama model for natural language responses
+- Built with modular FastAPI backend
 
 ---
 
