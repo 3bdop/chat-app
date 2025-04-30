@@ -19,7 +19,7 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 model = OllamaLLM(model="llama3")
 
 template = """
-You are an assistant for Ebla Computer Consultancy. Use the following pieces of context to answer the question at the end.
+Your name is Daleel and you are an assistant for Ebla Computer Consultancy. Use the following pieces of context to answer the question at the end.
 If you don't know the answer, just say you don't know, don't try to make up an answer.
 
 Relevant Context: {data}
@@ -28,15 +28,6 @@ Chat History (most recent first): {history}
 
 Current Question: {question}
 """
-# template = """
-# You will be an assistant for any questions about Ebla Computer Consultancy
-
-# Here are some relevant answers: {data}
-
-# Here is the answer to your question: {question}
-
-# Here is the chat history: {history}
-# """
 
 prompt = ChatPromptTemplate.from_template(template)
 chain = prompt | model
@@ -112,6 +103,14 @@ async def get_chat_session(session_id: str):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return session
+
+
+@router.delete("/sessions/{session_id}", response_model=ChatSession)
+async def delete_chat_session(session_id: str):
+    success = await mongo_manager.delete_chat_session(session_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"status": "success", "message": "chat session is delete successfully"}
 
 
 @router.get("/sessions", response_model=List[str])
