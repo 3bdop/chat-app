@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).parent.parent.parent
 with open(BASE_DIR / "data.txt", "r") as f:
     lines = f.readlines()
 
-# Create a DataFrame (though for simple text, you might not even need pandas)
+# Create a DataFrame
 df = pd.DataFrame({"Info": [line.strip() for line in lines]})
 
 embeddings = OllamaEmbeddings(model="mxbai-embed-large")
