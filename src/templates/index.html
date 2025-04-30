@@ -120,7 +120,7 @@
                         <div class="text-truncate session-link" style="color: #ececf1; cursor: pointer;">
                             ${sessionId.substring(0, 12)}...
                         </div>
-                        <button class="btn btn-link text-danger p-0 delete-session" data-id="${sessionId}" disabled>
+                        <button class="btn btn-link text-danger p-0 delete-session" data-id="${sessionId}">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </div>
@@ -141,9 +141,9 @@
                 btn.addEventListener('click', async function (e) {
                     e.stopPropagation();
                     const sessionId = this.dataset.id;
-                    if (confirm('Are you sure you want to delete this chat session?')) {
-                        await deleteSession(sessionId);
-                    }
+                    await deleteSession(sessionId);
+                    // if (confirm('Are you sure you want to delete this chat session?')) {
+                    // }
                 });
             });
         }
