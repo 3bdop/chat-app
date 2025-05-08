@@ -27,7 +27,7 @@
                 </div>
                 <div class="history-actions p-2 border-bottom">
                     <button class="btn btn-sm btn-outline-light w-100" id="refresh-history"
-                        onclick=window.location.reload()>
+                        onclick="window.location.reload()">
                         <i class="fas fa-plus"></i> New Chat
                     </button>
                 </div>
@@ -44,7 +44,13 @@
                         <button class="btn btn-link text-white mr-2 d-md-none" id="mobile-menu-toggle">
                             <i class="fas fa-bars"></i>
                         </button>
-                        <h3 class="text-white mb-0">Ebla ChatBot Assistant</h3>
+                        <h3 class="text-white mb-0 mr-auto">Ebla ChatBot Assistant</h3>
+
+                        <!-- Endpoint Selector Dropdown -->
+                        <select class="form-control endpoint-select" id="endpoint-select" style="width: 120px;">
+                            <option value="/ask-rag">RAG</option>
+                            <option value="/ask-sk">SK</option>
+                        </select>
                     </div>
 
                     <!-- Chat Messages -->
@@ -79,7 +85,14 @@
         const sendBtn = document.querySelector("#send-btn");
         const refreshBtn = document.querySelector("#refresh-history");
         const mobileMenuToggle = document.querySelector("#mobile-menu-toggle");
+        const endpointSelect = document.querySelector("#endpoint-select");
         let currentSessionId = null;
+        let currentEndpoint = '/ask-rag';  // Default endpoint
+
+        // Endpoint Selection Handler
+        endpointSelect.addEventListener('change', function () {
+            currentEndpoint = this.value;
+        });
 
         // Initialize on Load
         document.addEventListener('DOMContentLoaded', () => {
@@ -141,8 +154,6 @@
                     e.stopPropagation();
                     const sessionId = this.dataset.id;
                     await deleteSession(sessionId);
-                    // if (confirm('Are you sure you want to delete this chat session?')) {
-                    // }
                 });
             });
         }
@@ -244,7 +255,7 @@
                 const formData = new FormData();
                 formData.append('question', message);
 
-                const response = await fetch("/ask", {
+                const response = await fetch(currentEndpoint, {
                     method: "POST",
                     headers: { 'Session-ID': currentSessionId || '' },
                     body: formData
@@ -271,9 +282,6 @@
         sendBtn.addEventListener("click", sendMessage);
         refreshBtn.addEventListener('click', loadChatSessions);
         mobileMenuToggle.addEventListener('click', () => {
-            document.querySelector('.history-sidebar').classList.toggle('active');
-        });
-        document.getElementById('toggle-history').addEventListener('click', () => {
             document.querySelector('.history-sidebar').classList.toggle('active');
         });
 
