@@ -100,6 +100,24 @@ body {
   box-shadow: none;
 }
 
+.endpoint-select {
+  background-color: #444654 !important;
+  border: 1px solid #666 !important;
+  color: #fff !important;
+  margin-left: auto;
+  margin-right: 20px;
+}
+
+.endpoint-select option {
+  background-color: #444654;
+  color: #fff;
+}
+
+.endpoint-select:focus {
+  box-shadow: none;
+  border-color: #54a8fc;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .history-sidebar {
