@@ -9,12 +9,12 @@ from langchain_ollama.llms import OllamaLLM
 from pydantic import BaseModel
 
 from src.embeddings.vector import retriever
-from src.utils.db_services import ChatSession, Message, mongo_manager
+from src.models.db_services import ChatSession, Message, mongo_manager
 
 BASE_DIR = Path(__file__).parent.parent
 
 router = APIRouter()
-templates = Jinja2Templates(directory=BASE_DIR / "templates")
+templates = Jinja2Templates(directory=BASE_DIR / "view/templates")
 # Initialize LLM and prompt template
 model = OllamaLLM(model="llama3")
 
