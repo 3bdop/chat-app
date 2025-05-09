@@ -1,4 +1,4 @@
-# 🤖 Ebla Assistant — RAG-Powered Chat App
+# 🤖 Ebla Assistant — RAG+SK-Powered Chat App
 
 This project is a **chat assistant built for Ebla Computer Consultancy**, designed to provide helpful responses using Retrieval-Augmented Generation (RAG). It integrates:
 
@@ -88,7 +88,7 @@ Ollama lets you run large language models locally. Follow the instructions for y
 - Activate environment:
 
   ```bash
-  source .venv/bin/activate    #Windows: .\.venv\Scripts\activate.bat
+  source .venv/bin/activate    # Windows: .\.venv\Scripts\activate.bat
   ```
 
 - Install requirements:
