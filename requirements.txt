@@ -6,3 +6,4 @@ langchain-chroma
 pandas
 motor~=3.3.2
 pymongo~=4.6.0
+semantic-kernel[Ollama]
