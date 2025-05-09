@@ -167,8 +167,6 @@ async def ask_sk_question(
 
         chat_history.add_user_message(question)
 
-        print("cha hissss", chat_history)
-
         data = retriever.invoke(question)  # Your existing retriever
         # Prepare arguments
         arguments = KernelArguments(
