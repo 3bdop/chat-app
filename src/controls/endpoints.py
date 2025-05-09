@@ -9,6 +9,7 @@ from langchain_ollama.llms import OllamaLLM
 from pydantic import BaseModel
 from semantic_kernel import Kernel
 from semantic_kernel.connectors.ai.ollama import OllamaChatCompletion
+from semantic_kernel.contents.chat_history import ChatHistory
 from semantic_kernel.functions.kernel_arguments import KernelArguments
 from semantic_kernel.prompt_template import PromptTemplateConfig
 
@@ -153,22 +154,30 @@ async def ask_sk_question(
         if question.lower() in ("e", "exit", "bye", "q", "quit"):
             return AnswerResponse(answer="Goodbye! 👋", session_id=session_id or "")
 
-        history_context = ""
+        chat_history = ChatHistory()
+
         if session_id:
-            history = await mongo_manager.get_chat_history_dict(session_id)
-            if history:
-                history_pairs = zip(history["questions"], history["answers"])
-                history_context = "\n".join(
-                    [
-                        f"User: {q['content']}\nAssistant: {a['content']}"
-                        for q, a in history_pairs
-                    ]
-                )
+            session = await mongo_manager.get_chat_session(session_id)
+            if session and session.messages:
+                for msg in session.messages:
+                    if msg.is_user:
+                        chat_history.add_user_message(msg.content)
+                    else:
+                        chat_history.add_system_message(msg.content)
+
+        chat_history.add_user_message(question)
+
+        print("cha hissss", chat_history)
 
         data = retriever.invoke(question)  # Your existing retriever
-
         # Prepare arguments
-        arguments = KernelArguments(data=data, input=question, history=history_context)
+        arguments = KernelArguments(
+            data=data,
+            input=question,
+            history="\n".join(
+                [f"{msg.role}: {msg.content}" for msg in chat_history.messages]
+            ),
+        )
 
         # Get response
         response = await kernel.invoke(
