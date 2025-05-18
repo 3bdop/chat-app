@@ -7,7 +7,6 @@ import uuid
 from pathlib import Path
 from typing import List, Optional
 
-from dotenv import load_dotenv
 from elevenlabs.client import ElevenLabs
 from fastapi import APIRouter, Form, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse
@@ -16,7 +15,10 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama.llms import OllamaLLM
 from pydantic import BaseModel
 from semantic_kernel import Kernel
-from semantic_kernel.connectors.ai.ollama import OllamaChatCompletion
+from semantic_kernel.connectors.ai.open_ai import (
+    AzureChatCompletion,
+    AzureChatPromptExecutionSettings,
+)
 from semantic_kernel.contents.chat_history import ChatHistory
 from semantic_kernel.functions.kernel_arguments import KernelArguments
 from semantic_kernel.prompt_template import PromptTemplateConfig
@@ -49,35 +51,43 @@ chain = prompt | model
 
 # ----------------------SK-----------------------#
 kernel = Kernel()
-chat_service = OllamaChatCompletion(ai_model_id="llama3", host="http://localhost:11434")
+execution_settings = AzureChatPromptExecutionSettings()
+
+# service_id="muhanaai7320944360",
+chat_service = AzureChatCompletion(
+    deployment_name=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
+    endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    api_version="2025-01-01-preview",
+)
 kernel.add_service(chat_service)
 
 # Configure prompt template
-# sk_template = """
-# Your name is Semantic Kernel and you are an assistant for Ebla Computer Consultancy.
-# Use the following pieces of context to answer the question at the end.
-# If the answer not in relevant context, just answer it.
-# The response should include
-
-# Relevant Context: {{$data}}
-
-# Chat History:
-# {{$history}}
-
-# Current Question: {{$input}}
-
-# """
 sk_template = """
-You are a virtual girlfriend. Respond with a JSON array of messages (max 3). Each message has:
-- "text": response text
-- "facialExpression": one of [smile, surprised, funnyFace, default]
-- "animation": one of [talking, Idle, dance]
+You are a virtual assistant that responds strictly in JSON format.
+You must respond in Arabic language, even if the user asked in English.
+Respond with a JSON array containing 1-3 message objects. Each object must have:
+- "text": (string) response text
+- "facialExpression": (string) one of [smile, surprised, funnyFace, default]
+- "animation": (string) one of [talking, Idle, dance]
 
-Special Rule: If the user says "dance", set "animation" to "dance".
+Rules:
+1. Only respond with valid JSON, no other text or commentary
+2. If user says "dance", set "animation" to "dance" for all messages
+3. Keep responses brief and conversational
 
 Context: {{$data}}
 Chat History: {{$history}}
-Question: {{$input}}
+User Input: {{$input}}
+
+Response must be exactly in this format:
+[
+    {
+        "text": "your response",
+        "facialExpression": "expression",
+        "animation": "animation"
+    }
+]
 """
 # Create semantic function
 prompt_config = PromptTemplateConfig(
@@ -85,7 +95,7 @@ prompt_config = PromptTemplateConfig(
     template_format="semantic-kernel",
     input_variables=[
         {"name": "data", "description": "Relevant context"},
-        {"name": "question", "description": "User question"},
+        {"name": "input", "description": "User question"},
         {"name": "history", "description": "Chat history"},
     ],
 )
@@ -95,10 +105,48 @@ assistant_function = kernel.add_function(
     plugin_name="EblaPlugin",
     prompt_template_config=prompt_config,
 )
+
+# load_dotenv(override=True)
+# AZUREOPENAI_API_KEY = os.getenv("AZUREOPENAI_API_KEY")
+# kernel = Kernel()
+# # chat_service = OllamaChatCompletion(ai_model_id="llama3", host="http://localhost:11434")
+# chat_service = AzureChatCompletion(
+#     deployment_name="my-sk",
+#     api_key=AZUREOPENAI_API_KEY,
+#     endpoint="https://muhanaai7320944360.openai.azure.com/",
+# )
+# kernel.add_service(chat_service)
+
+# sk_template = """
+# You are a virtual girlfriend. Respond with a JSON array of messages (max 3). Each message has:
+# - "text": response text
+# - "facialExpression": one of [smile, surprised, funnyFace, default]
+# - "animation": one of [talking, Idle, dance]
+
+# Special Rule: If the user says "dance", set "animation" to "dance".
+
+# Context: {{$data}}
+# Chat History: {{$history}}
+# Question: {{$input}}
+# """
+# # Create semantic function
+# prompt_config = PromptTemplateConfig(
+#     template=sk_template,
+#     template_format="semantic-kernel",
+#     input_variables=[
+#         {"name": "data", "description": "Relevant context"},
+#         {"name": "question", "description": "User question"},
+#         {"name": "history", "description": "Chat history"},
+#     ],
+# )
+
+# assistant_function = kernel.add_function(
+#     function_name="ebla_assistant",
+#     plugin_name="EblaPlugin",
+#     prompt_template_config=prompt_config,
+# )
 # ----------------------SK-----------------------#
 
-
-load_dotenv(override=True)
 
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 client = ElevenLabs(
@@ -337,7 +385,40 @@ async def ask_sk_question(
 ):
     try:
         if question.lower() in ("e", "exit", "bye", "q", "quit"):
-            return AnswerResponse(answer="Goodbye! 👋", session_id=session_id or "")
+            return AnswerResponse(
+                messages=[
+                    MessageResponse(
+                        text="Goodbye! 👋",
+                        audio="",
+                        facialExpression="smile",
+                        animation="Idle",
+                    )
+                ],
+                session_id=session_id or "",
+            )
+
+        # Load dance music base64 upfront
+        MUSIC_BASE64 = ""
+        try:
+            with open("audios/music.txt", "r") as f:
+                MUSIC_BASE64 = f.read().strip()
+        except Exception as e:
+            logging.warning(f"Could not load music base64: {e}")
+
+        # Special handling for dance command
+        if question.lower().strip() == "dance":
+            return AnswerResponse(
+                messages=[
+                    MessageResponse(
+                        text="",  # Empty text since we don't want to speak
+                        audio=MUSIC_BASE64,
+                        lipsync={},  # Empty lipsync since no speech
+                        facialExpression="smile",
+                        animation="dance",
+                    )
+                ],
+                session_id=session_id or str(uuid.uuid4()),
+            )
 
         chat_history = ChatHistory()
 
@@ -352,8 +433,7 @@ async def ask_sk_question(
 
         chat_history.add_user_message(question)
 
-        data = retriever.invoke(question)  # Your existing retriever
-        # Prepare arguments
+        data = retriever.invoke(question)
         arguments = KernelArguments(
             data=data,
             input=question,
@@ -378,22 +458,26 @@ async def ask_sk_question(
                 {"text": res_text, "facialExpression": "default", "animation": "Idle"}
             ]
 
-        if question.lower().strip() == "dance":
-            for msg in messages:
-                msg["animation"] = "dance"
-
-        # try:
-        #     audio_stream = text_to_speech_stream(res_text)
-        #     audio_bytes = audio_stream.getvalue()
-        #     audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
-        # except Exception as e:
-        #     print(audio_base64)
-        #     print(f"\nExceptetionnn: {e}")
         message_responses = []
         for msg in messages:
-            processed = await process_message(msg)
-            if processed:  # Only add successful responses
-                message_responses.append(processed)
+            # Skip audio processing for dance commands (already handled above)
+            if question.lower().strip() == "dance":
+                msg["animation"] = "dance"
+                msg["audio"] = MUSIC_BASE64
+                message_responses.append(
+                    MessageResponse(
+                        text=msg.get("text", ""),
+                        audio=msg.get("audio", ""),
+                        lipsync={},
+                        facialExpression=msg.get("facialExpression", "smile"),
+                        animation=msg.get("animation", "dance"),
+                    )
+                )
+            else:
+                processed = await process_message(msg)
+                if processed:
+                    message_responses.append(processed)
+
         if not message_responses:
             message_responses.append(
                 MessageResponse(
@@ -418,13 +502,108 @@ async def ask_sk_question(
             await mongo_manager.update_chat_session(session_id, user_message)
             await mongo_manager.update_chat_session(session_id, bot_message)
 
-        # return AnswerResponse(
-        #     answer=str(response), session_id=session_id, audio=audio_base64
-        # )
         return AnswerResponse(messages=message_responses, session_id=session_id)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# @router.post("/ask-sk", response_model=AnswerResponse)
+# async def ask_sk_question(
+#     question: str = Form(...),
+#     session_id: Optional[str] = Header(None, alias="Session-ID"),
+# ):
+#     try:
+#         if question.lower() in ("e", "exit", "bye", "q", "quit"):
+#             return AnswerResponse(answer="Goodbye! 👋", session_id=session_id or "")
+
+#         chat_history = ChatHistory()
+
+#         if session_id:
+#             session = await mongo_manager.get_chat_session(session_id)
+#             if session and session.messages:
+#                 for msg in session.messages:
+#                     if msg.is_user:
+#                         chat_history.add_user_message(msg.content)
+#                     else:
+#                         chat_history.add_assistant_message(msg.content)
+
+#         chat_history.add_user_message(question)
+
+#         data = retriever.invoke(question)  # Your existing retriever
+#         # Prepare arguments
+#         KernelArguments(
+#             data=data,
+#             input=question,
+#             history="\n".join(
+#                 [f"{msg.role}: {msg.content}" for msg in chat_history.messages]
+#             ),
+#         )
+
+#         # Get response
+#         # response = await kernel.invoke(
+#         #     function=assistant_function,
+#         #     arguments=arguments,
+#         # )
+#         response = await chat_service.get_chat_message_content(
+#             chat_history=chat_history, settings=execution_settings
+#         )
+#         res_text = str(response)
+
+#         try:
+#             messages = json.loads(res_text)
+#             if "messages" in messages:
+#                 messages = messages["messages"]
+#         except json.JSONDecodeError:
+#             messages = [
+#                 {"text": res_text, "facialExpression": "default", "animation": "Idle"}
+#             ]
+
+#         MUSIC_BASE64 = ""
+#         try:
+#             with open("audios/music.txt", "r") as f:
+#                 MUSIC_BASE64 = f.read()
+#         except Exception as e:
+#             logging.warning(f"Could not load music base64: {e}")
+
+#         if question.lower().strip() == "dance":
+#             for msg in messages:
+#                 msg["animation"] = "dance"
+#                 msg["audio"] = MUSIC_BASE64
+
+#         message_responses = []
+#         for msg in messages:
+#             processed = await process_message(msg)
+#             if processed:  # Only add successful responses
+#                 message_responses.append(processed)
+#         if not message_responses:
+#             message_responses.append(
+#                 MessageResponse(
+#                     text="Sorry, I encountered an error processing your request",
+#                     audio="",
+#                     lipsync={},
+#                     facialExpression="sad",
+#                     animation="Idle",
+#                 )
+#             )
+
+#         user_message = Message(content=question, is_user=True)
+#         bot_message = Message(
+#             content=json.dumps([m.dict() for m in message_responses]), is_user=False
+#         )
+
+#         # Update chat history
+#         if not session_id:
+#             new_session = ChatSession(messages=[user_message, bot_message])
+#             session_id = await mongo_manager.create_chat_session(new_session)
+#         else:
+#             await mongo_manager.update_chat_session(session_id, user_message)
+#             await mongo_manager.update_chat_session(session_id, bot_message)
+
+#         return AnswerResponse(messages=message_responses, session_id=session_id)
+
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 # ------------------------SEMANTIC KERNEL OLLAMA------------------------#
