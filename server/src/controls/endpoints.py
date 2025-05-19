@@ -7,6 +7,7 @@ import uuid
 from pathlib import Path
 from typing import List, Optional
 
+# from arabic_buckwalter_transliteration.transliteration import arabic_to_buckwalter
 from elevenlabs.client import ElevenLabs
 from fastapi import APIRouter, Form, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse
@@ -22,7 +23,6 @@ from semantic_kernel.connectors.ai.open_ai import (
 from semantic_kernel.contents.chat_history import ChatHistory
 from semantic_kernel.functions.kernel_arguments import KernelArguments
 from semantic_kernel.prompt_template import PromptTemplateConfig
-
 from src.embeddings.vector import retriever
 from src.models.db_services import ChatSession, Message, mongo_manager
 
@@ -51,7 +51,9 @@ chain = prompt | model
 
 # ----------------------SK-----------------------#
 kernel = Kernel()
-execution_settings = AzureChatPromptExecutionSettings()
+execution_settings = AzureChatPromptExecutionSettings(
+    temperature=0.1, response_format={"type": "json_object"}
+)
 
 # service_id="muhanaai7320944360",
 chat_service = AzureChatCompletion(
@@ -62,14 +64,17 @@ chat_service = AzureChatCompletion(
 )
 kernel.add_service(chat_service)
 
+# - "text-buckwalterTransliteration": (string) response text in buckwalter transliteration
+# "text-buckwalterTransliteration": "your response",
+# - "text-ar": (string) response text in Arabic
+# You must respond in Arabic language, even if the user asked in English.
 # Configure prompt template
 sk_template = """
 You are a virtual assistant that responds strictly in JSON format.
-You must respond in Arabic language, even if the user asked in English.
 Respond with a JSON array containing 1-3 message objects. Each object must have:
-- "text": (string) response text
+- "text-en": (string) response text in English
 - "facialExpression": (string) one of [smile, surprised, funnyFace, default]
-- "animation": (string) one of [talking, Idle, dance]
+- "animation": (string) one of [ Idle, dance]
 
 Rules:
 1. Only respond with valid JSON, no other text or commentary
@@ -83,7 +88,7 @@ User Input: {{$input}}
 Response must be exactly in this format:
 [
     {
-        "text": "your response",
+        "text-en": "your response",
         "facialExpression": "expression",
         "animation": "animation"
     }
@@ -155,7 +160,8 @@ client = ElevenLabs(
 
 
 class MessageResponse(BaseModel):
-    text: str
+    # text_ar: str
+    text_en: str
     audio: str
     lipsync: Optional[dict] = None
     facialExpression: str
@@ -328,54 +334,41 @@ async def lip_sync(mp3_path: Path):
         raise
 
 
-# def text_to_speech_stream(text: str) -> IO[bytes]:
-#     # Perform the text-to-speech conversion
-#     response = client.text_to_speech.convert(
-#         voice_id="UgBBYS2sOqTuMpoF3BR0",  # Adam pre-made voice
-#         output_format="mp3_22050_32",
-#         text=text,
-#         model_id="eleven_multilingual_v2",
-#         # Optional voice settings that allow you to customize the output
-#         voice_settings=VoiceSettings(
-#             stability=0.0,
-#             similarity_boost=1.0,
-#             style=0.0,
-#             use_speaker_boost=True,
-#             speed=1.0,
-#         ),
-#     )
-#     # Create a BytesIO object to hold the audio data in memory
-#     audio_stream = BytesIO()
-#     # Write each chunk of audio data to the stream
-#     for chunk in response:
-#         if chunk:
-#             audio_stream.write(chunk)
-#     # Reset stream position to the beginning
-#     audio_stream.seek(0)
-#     # Return the stream for further use
-#     return audio_stream
-
-
 async def process_message(msg: dict):
-    """Process a single message with proper error handling"""
+    """Process message with separate audio pipelines"""
     try:
-        # Generate audio first
-        audio_bytes, mp3_path = await generate_audio(msg["text"])
+        # First validate we have Arabic text
+        # if "text-ar" not in msg:
+        #     raise ValueError("Missing Arabic text in message")
+        if "text-en" not in msg:
+            raise ValueError("Missing Arabic text in message")
 
-        # Generate lipsync
-        lipsync = await lip_sync(mp3_path)
+        arabic_text = msg["text-en"]
+
+        # Generate Buckwalter transliteration locally
+        # buckwalter_text = arabic_to_buckwalter(arabic_text)  # Your conversion function
+        # logging.error(f"buckk textt\n\t{buckwalter_text}\n")
+
+        # Generate Buckwalter audio for lipsync
+        # buckwalter_audio, buckwalter_path = await generate_audio(buckwalter_text)
+
+        # Generate Arabic audio for playback
+        arabic_audio, arabic_path = await generate_audio(arabic_text)
+
+        # lipsync_data = await lip_sync(buckwalter_path)
+        lipsync_data = await lip_sync(arabic_path)
+        # buckwalter_path.unlink(missing_ok=True)
 
         return MessageResponse(
-            text=msg["text"],
-            audio=base64.b64encode(audio_bytes).decode("utf-8"),
-            lipsync=lipsync,
+            text_en=arabic_text,
+            audio=base64.b64encode(arabic_audio).decode("utf-8"),
+            lipsync=lipsync_data,
             facialExpression=msg.get("facialExpression", "default"),
             animation=msg.get("animation", "Idle"),
         )
-
     except Exception as e:
         logger.error(f"Message processing failed: {str(e)}")
-        return None  # Return None instead of raising to continue processing
+        return None
 
 
 @router.post("/ask-sk", response_model=AnswerResponse)
@@ -398,15 +391,15 @@ async def ask_sk_question(
             )
 
         # Load dance music base64 upfront
-        MUSIC_BASE64 = ""
-        try:
-            with open("audios/music.txt", "r") as f:
-                MUSIC_BASE64 = f.read().strip()
-        except Exception as e:
-            logging.warning(f"Could not load music base64: {e}")
 
         # Special handling for dance command
+        MUSIC_BASE64 = ""
         if question.lower().strip() == "dance":
+            try:
+                with open("audios/music.txt", "r") as f:
+                    MUSIC_BASE64 = f.read().strip()
+            except Exception as e:
+                logging.warning(f"Could not load music base64: {e}")
             return AnswerResponse(
                 messages=[
                     MessageResponse(
@@ -434,7 +427,7 @@ async def ask_sk_question(
         chat_history.add_user_message(question)
 
         data = retriever.invoke(question)
-        arguments = KernelArguments(
+        args = KernelArguments(
             data=data,
             input=question,
             history="\n".join(
@@ -442,46 +435,76 @@ async def ask_sk_question(
             ),
         )
 
-        # Get response
+        # response = await chat_service.get_chat_message_content(
+        #     chat_history=chat_history, settings=execution_settings, kwargs=args
+        # )
         response = await kernel.invoke(
-            function=assistant_function,
-            arguments=arguments,
+            assistant_function, arguments=args, execution_settings=execution_settings
         )
-        res_text = str(response)
+        logging.error(f"modeeeeelllll resss: \n{response}")
 
+        res_text = str(response)
+        # logging.warning(f"modeeeeelllll resss: \n{res_text}")
+
+        # try:
+        #     messages = json.loads(res_text)
+        #     if "messages" in messages:
+        #         messages = messages["messages"]
+        # except json.JSONDecodeError:
+        #     messages = [
+        #         {"text": res_text, "facialExpression": "default", "animation": "Idle"}
+        #     ]
         try:
             messages = json.loads(res_text)
+            logging.warning(f"messagessss: \n{res_text}")
+
             if "messages" in messages:
                 messages = messages["messages"]
         except json.JSONDecodeError:
+            # Correct fallback structure
             messages = [
-                {"text": res_text, "facialExpression": "default", "animation": "Idle"}
+                {
+                    # "text-buck": ">sf",
+                    # "text-ar": "أسف",
+                    "text-en": "sorry",
+                    "facialExpression": "default",
+                    "animation": "Idle",
+                }
             ]
 
         message_responses = []
         for msg in messages:
             # Skip audio processing for dance commands (already handled above)
-            if question.lower().strip() == "dance":
-                msg["animation"] = "dance"
-                msg["audio"] = MUSIC_BASE64
-                message_responses.append(
-                    MessageResponse(
-                        text=msg.get("text", ""),
-                        audio=msg.get("audio", ""),
-                        lipsync={},
-                        facialExpression=msg.get("facialExpression", "smile"),
-                        animation=msg.get("animation", "dance"),
-                    )
-                )
-            else:
+            # if question.lower().strip() == "dance":
+            #     msg["animation"] = "dance"
+            #     msg["audio"] = MUSIC_BASE64
+            #     message_responses.append(
+            #         MessageResponse(
+            #             text=msg.get("text", ""),
+            #             audio=msg.get("audio", ""),
+            #             lipsync={},
+            #             facialExpression=msg.get("facialExpression", "smile"),
+            #             animation=msg.get("animation", "dance"),
+            #         )
+            #     )
+            # else:
+            #     processed = await process_message(msg)
+            #     if processed:
+            #         message_responses.append(processed)
+            # if "text-ar" in msg:
+            print(msg)
+            if "text-en" in msg:
                 processed = await process_message(msg)
                 if processed:
                     message_responses.append(processed)
+            else:
+                logger.error(f"Missing Arabic text in message: {msg}")
 
         if not message_responses:
             message_responses.append(
                 MessageResponse(
-                    text="Sorry, I encountered an error processing your request",
+                    # text_ar="أسف، حدث خطأ أثناء معالجة طلبك",  # Arabic error message
+                    text_en="Sorry something wrong happened",  # Arabic error message
                     audio="",
                     lipsync={},
                     facialExpression="sad",
@@ -641,5 +664,31 @@ async def get_chat_history(session_id: str):
     return history
 
 
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
+# ---------------------------CHAT APP GENERAL---------------------------#
 # ---------------------------CHAT APP GENERAL---------------------------#
 # ---------------------------CHAT APP GENERAL---------------------------#
