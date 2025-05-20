@@ -23,6 +23,10 @@ export const UI = ({ hidden, ...props }) => {
                     <h1 className="font-black text-xl">Ebla Chat-Bot Assistant</h1>
                     <p>Here to help you 🫡</p>
                 </div>
+                <div className="self-start backdrop-blur-md bg-white bg-opacity-50 p-4 rounded-lg">
+                    <h1 className="font-black text-xl">Special Commands</h1>
+                    <p align="center">dance</p>
+                </div>
                 <div className="w-full flex flex-col items-end justify-center gap-4">
                     <button
                         onClick={() => setCameraZoomed(!cameraZoomed)}
