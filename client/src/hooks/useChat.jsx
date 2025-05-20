@@ -120,7 +120,7 @@ export const ChatProvider = ({ children }) => {
 
             // Transform backend messages to frontend format
             const newMessages = data.messages.map(msg => ({
-                content: msg.text,
+                content: msg.text_en,
                 audio: msg.audio,
                 lipsync: msg.lipsync,
                 animation: msg.animation,
