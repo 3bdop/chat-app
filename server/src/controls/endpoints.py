@@ -403,7 +403,7 @@ async def ask_sk_question(
             return AnswerResponse(
                 messages=[
                     MessageResponse(
-                        text="",  # Empty text since we don't want to speak
+                        text_en="",  # Empty text since we don't want to speak
                         audio=MUSIC_BASE64,
                         lipsync={},  # Empty lipsync since no speech
                         facialExpression="smile",
@@ -446,14 +446,6 @@ async def ask_sk_question(
         res_text = str(response)
         # logging.warning(f"modeeeeelllll resss: \n{res_text}")
 
-        # try:
-        #     messages = json.loads(res_text)
-        #     if "messages" in messages:
-        #         messages = messages["messages"]
-        # except json.JSONDecodeError:
-        #     messages = [
-        #         {"text": res_text, "facialExpression": "default", "animation": "Idle"}
-        #     ]
         try:
             messages = json.loads(res_text)
             logging.warning(f"messagessss: \n{res_text}")
@@ -480,7 +472,7 @@ async def ask_sk_question(
             #     msg["audio"] = MUSIC_BASE64
             #     message_responses.append(
             #         MessageResponse(
-            #             text=msg.get("text", ""),
+            #             text_en=msg.get("text_en", ""),
             #             audio=msg.get("audio", ""),
             #             lipsync={},
             #             facialExpression=msg.get("facialExpression", "smile"),
@@ -662,33 +654,4 @@ async def get_chat_history(session_id: str):
     if not history:
         raise HTTPException(status_code=404, detail="Session not found")
     return history
-
-
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
-# ---------------------------CHAT APP GENERAL---------------------------#
+    return history
