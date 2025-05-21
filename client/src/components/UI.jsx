@@ -111,7 +111,7 @@ import { useChat } from "../hooks/useChat";
 
 export const UI = ({ hidden, ...props }) => {
     const input = useRef();
-    const { chat, loading, cameraZoomed, setCameraZoomed, message } = useChat();
+    const { chat, loading, cameraZoomed, setCameraZoomed, message, setSession } = useChat();
     const [sessions, setSessions] = useState([]);
     const [selectedSession, setSelectedSession] = useState(null);
 
@@ -119,15 +119,15 @@ export const UI = ({ hidden, ...props }) => {
         // Fetch chat sessions when component mounts
         const fetchSessions = async () => {
             try {
-                const response = await fetch('http:localhost:8000/sessions');
-                const data = await response.json();
+                const res = await fetch("http://localhost:8000/sessions");
+                const data = await res.json();
                 setSessions(data);
             } catch (error) {
                 console.error('Error fetching sessions:', error);
             }
         };
         fetchSessions();
-    }, []);
+    }, [chat]);
 
     const sendMessage = () => {
         const text = input.current.value;
@@ -144,20 +144,27 @@ export const UI = ({ hidden, ...props }) => {
     return (
         <>
             {/* Chat History Sidebar */}
-            <div className="fixed top-0 left-0 bottom-0 w-64 bg-white bg-opacity-50 backdrop-blur-md p-4 overflow-y-auto pointer-events-auto">
-                <h2 className="font-bold mb-4 text-lg">Chat Sessions</h2>
-                <ul className="space-y-2">
-                    {sessions.map((session) => (
-                        <li
-                            key={session}
-                            className={`p-2 rounded cursor-pointer hover:bg-gray-100 ${session === selectedSession ? "bg-gray-100" : ""
-                                }`}
-                            onClick={() => setSelectedSession(session)}
+            <div className="fixed top-0 left-0 bottom-0 w-64 bg-white bg-opacity-50 backdrop-blur-md p-1 z-9 overflow-y-auto cursor-pointer">
+                <h1 className="font-black text-xl" align='center'>Chat History</h1>
+
+                <div className="flex flex-col space-y-2">
+                    {sessions.map((sessionId) => (
+                        <button
+                            key={sessionId}
+                            onClick={() => {
+                                setSelectedSession(sessionId);
+                                setSession(sessionId);
+                            }}
+                            className={`w-full text-left px-4 py-2 rounded-lg transition 
+          ${sessionId === selectedSession
+                                    ? "bg-blue-500 text-white"
+                                    : "bg-gray-100 text-gray-800 hover:bg-blue-100 hover:text-blue-800"}
+        focus:outline-none focus:ring-2 focus:ring-blue-400`}
                         >
-                            {session}
-                        </li>
+                            {sessionId}
+                        </button>
                     ))}
-                </ul>
+                </div>
             </div>
 
             {/* Original UI shifted right */}
