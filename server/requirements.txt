@@ -10,3 +10,4 @@ semantic-kernel[Ollama]
 elevenlabs
 python-dotenv
 asyncio
+azure-search-documents==11.5.1
