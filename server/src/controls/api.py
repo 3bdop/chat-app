@@ -26,6 +26,8 @@ from semantic_kernel.prompt_template import PromptTemplateConfig
 from src.embeddings.vector import retriever
 from src.models.db_services import ChatSession, Message, mongo_manager
 
+BASE_DIR = Path(__file__).parent.parent
+
 router = APIRouter(tags=["RAG + Semantic-Kernel"])
 
 # ----------------------SK-----------------------#
@@ -539,6 +541,8 @@ async def get_chat_history(session_id: str):
     return history
 
 
+########################## END ############################
+########################## END ############################
 ########################## END ############################
 ########################## END ############################
 ########################## END ############################
