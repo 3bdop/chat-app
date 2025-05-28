@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from src.controls.endpoints import router
+from src.controls.api import router
 
 app = FastAPI(title="Ebla ChatBot Assistant")
 app.include_router(router)
