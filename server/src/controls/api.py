@@ -7,12 +7,11 @@ import uuid
 from pathlib import Path
 from typing import List, Optional
 
-from azure.core.credentials import AzureKeyCredential
-from azure.search.documents import SearchClient
-
 # from arabic_buckwalter_transliteration.transliteration import arabic_to_buckwalter
 from elevenlabs.client import ElevenLabs
-from fastapi import APIRouter, Form, Header, HTTPException
+from fastapi import APIRouter, Form, Header, HTTPException, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from openai import AzureOpenAI
 from pydantic import BaseModel
 from semantic_kernel import Kernel
@@ -23,10 +22,14 @@ from semantic_kernel.connectors.ai.open_ai import (
 from semantic_kernel.contents.chat_history import ChatHistory
 from semantic_kernel.functions.kernel_arguments import KernelArguments
 from semantic_kernel.prompt_template import PromptTemplateConfig
-from src.embeddings.vector import retriever
 from src.models.db_services import ChatSession, Message, mongo_manager
 
+import azure.cognitiveservices.speech as speechsdk
+from azure.core.credentials import AzureKeyCredential
+from azure.search.documents import SearchClient
+
 BASE_DIR = Path(__file__).parent.parent
+templates = Jinja2Templates(directory=BASE_DIR / "view/templates")
 
 router = APIRouter(tags=["RAG + Semantic-Kernel"])
 
@@ -154,74 +157,100 @@ class VectorAnswerResponse(BaseModel):
     answer: str
 
 
-def format_source_doc(result):
-    return {
-        "source": result.get("metadata_storage_name", "Unknown"),
-        "last_modified": result.get("metadata_storage_last_modified"),
-        "score": result.get("@search.score"),
-        "highlights": result.get("@search.highlights"),
-    }
-
-
-@router.post("/api/ask", response_model=VectorAnswerResponse)
-async def ask_question(
-    request: QuestionRequest,
-):  # TODO: To use extra_body for vector search
+@router.get("/", response_class=HTMLResponse)
+async def index(request: Request):
     try:
-        # 1. Search Azure AI Vector Search
-        # search_results = azure_search_client.search(
-        #     search_text=request.question,
-        #     search_mode="all",
-        #     include_total_count=True,
-        #     highlight_fields="merged_content-3,imageCaption-3",
-        #     # search_text=request.question,
-        #     # top=request.max_results,
-        #     select=[
-        #         "metadata_storage_name",
-        #         "metadata_storage_size",
-        #         "metadata_storage_last_modified",
-        #         "language",
-        #         "merged_content",
-        #         "keyphrases",
-        #         "locations",
-        #         "imageTags",
-        #         "imageCaption",
-        #     ],
-        #     # highlight_fields="merged_content,imageCaption",
-        #     # query_type="semantic",  # Use semantic search if enabled
-        #     # semantic_configuration_name="default",  # If using semantic search
-        # )
+        return templates.TemplateResponse(
+            name="azure-audio-streaming.html", context={"request": request}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-        # context_parts = []
-        # source_docs = []
-        # total_length = 0
 
-        # for result in search_results:
-        #     content = result.get("merged_content") or result.get("imageCaption") or ""
-        #     if content:
-        #         context_parts.append(content)
-        #         source_docs.append(format_source_doc(result))
-        #         total_length += len(content)
-        #         if total_length >= request.max_context_length:
-        #             break
+speech_key = "951wjszKYnfH14zCkU34TIuny8L9f4nTXfSMFCyw2HxX2f3JlNYzJQQJ99BDACfhMk5XJ3w3AAAAACOGK2zr"
+speech_endpoint = "https://ai-melmetwally8876ai602343795761.openai.azure.com"
+speech_config = speechsdk.SpeechConfig(
+    subscription=speech_key, endpoint=speech_endpoint
+)
 
-        # context = "\n\n".join(context_parts)[: request.max_context_length]
-        # logging.error(f"this is context:::{context}")
-        # 3. Generate answer with OpenAI
+
+class VisemeData(BaseModel):
+    offset: int  # Offset in ticks (1 tick = 100 nanoseconds)
+    id: int  # Viseme ID (0-21)
+
+
+class TTSResponse(BaseModel):
+    visemes: List[VisemeData]
+    audio_base64: str
+
+
+@router.post("/api/tts", response_model=TTSResponse)
+async def tts(req: QuestionRequest):
+    try:
+        speech_config.speech_synthesis_voice_name = "en-US-AriaNeural"
+
+        # Create speech synthesizer with in-memory audio capture
+        speech_synthesizer = speechsdk.SpeechSynthesizer(
+            speech_config=speech_config,
+            audio_config=None,  # Capture audio in memory
+        )
+
+        # Create list to store visemes
+        visemes = []
+
+        # Viseme event callback
+        def viseme_cb(evt: speechsdk.SpeechSynthesisVisemeEventArgs):
+            visemes.append(VisemeData(offset=evt.audio_offset, id=evt.viseme_id))
+
+        # Subscribe to viseme events
+        speech_synthesizer.viseme_received.connect(viseme_cb)
+
+        # Synthesize speech
+        result = speech_synthesizer.speak_text_async(req.question).get()
+
+        if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
+            # Get audio data directly from result
+            audio_data = result.audio_data
+
+            # Convert to base64
+            audio_base64 = base64.b64encode(audio_data).decode("utf-8")
+
+            return TTSResponse(audio_base64=audio_base64, visemes=visemes)
+
+        elif result.reason == speechsdk.ResultReason.Canceled:
+            cancellation_details = result.cancellation_details
+            raise HTTPException(
+                status_code=500,
+                detail=f"Speech synthesis canceled: {cancellation_details.reason}",
+            )
+    except Exception as e:
+        logger.error(f"TTS processing failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to process TTS request: {str(e)}"
+        )
+
+
+@router.post("/api/ask-me", response_model=VectorAnswerResponse)
+async def ask_me(
+    request: QuestionRequest,
+):
+    try:
         response = AzureClient.chat.completions.create(
             model=DEPLOYMENT_NAME,
             messages=[
                 {
                     "role": "system",
                     "content": """
+                    You are Abdulrahman's smart assistant and you are here to assist with any questions about him (Abdulrahman).
                     Answer the question using the vector AI search, which is by using the extra_body.
-                    If unsure, say "I don't have enough information to answer that."                
-                                        """,
+                    If any irrelevant/out of the data source question is asked say "Sorry, can't help with thatI don't have enough information".
+                    Make the response more user friendly.
+                        """,
                 },
                 {"role": "user", "content": request.question},
             ],
             max_tokens=800,
-            temperature=0.3,
+            temperature=0.5,
             extra_body={
                 "data_sources": [
                     {
@@ -230,9 +259,20 @@ async def ask_question(
                             "endpoint": search_endpoint,
                             "index_name": search_index,
                             "key": search_key,
+                            "query_type": "vector_semantic_hybrid",
+                            "semantic_configuration": os.getenv("RANK"),
+                            "in_scope": False,
                             "authentication": {
                                 "type": "api_key",
                                 "key": search_admin_key,
+                            },
+                            "embedding_dependency": {
+                                "deployment_name": os.getenv("EMBEDDING_MODEL_NAME"),
+                                "type": "deployment_name",
+                            },
+                            "fields_mapping": {
+                                "content_fields": ["chunk", "title"],
+                                "vector_fields": ["text_vector"],
                             },
                         },
                     }
@@ -252,6 +292,69 @@ async def ask_question(
         raise HTTPException(
             status_code=500, detail=f"Failed to process question: {str(e)}"
         )
+
+
+# @router.post("/api/ask", response_model=VectorAnswerResponse)
+# async def ask_question(
+#     request: QuestionRequest,
+# ):  # TODO: To use extra_body for vector search
+#     try:
+#         response = AzureClient.chat.completions.create(
+#             model=DEPLOYMENT_NAME,
+#             messages=[
+#                 {
+#                     "role": "system",
+#                     "content": """
+#                     Answer the question using the vector AI search, which is by using the extra_body.
+#                     If any irrelevant/out of the data source question is asked say "Sorry, can't help with that".
+#                         """,
+#                 },
+#                 {"role": "user", "content": request.question},
+#             ],
+#             max_tokens=800,
+#             temperature=0.3,
+#             extra_body={
+#                 "data_sources": [
+#                     {
+#                         "type": "azure_search",
+#                         "parameters": {
+#                             "endpoint": search_endpoint,
+#                             "index_name": search_index,
+#                             "key": search_key,
+#                             "query_type": "vector_semantic_hybrid",
+#                             # "query_type": "vector",
+#                             "semantic_configuration": os.getenv("RANK"),
+#                             "in_scope": False,
+#                             "authentication": {
+#                                 "type": "api_key",
+#                                 "key": search_admin_key,
+#                             },
+#                             "embedding_dependency": {
+#                                 "deployment_name": os.getenv("EMBEDDING_MODEL_NAME"),
+#                                 "type": "deployment_name",
+#                             },
+#                             "fields_mapping": {
+#                                 "content_fields": ["chunk", "title"],
+#                                 "vector_fields": ["text_vector"],
+#                             },
+#                         },
+#                     }
+#                 ],
+#             },
+#         )
+
+#         # 4. Extract confidence from completion
+#         answer = response.choices[0].message.content
+
+#         return VectorAnswerResponse(
+#             answer=answer,
+#         )
+
+#     except Exception as e:
+#         logger.error(f"Question processing failed: {str(e)}")
+#         raise HTTPException(
+#             status_code=500, detail=f"Failed to process question: {str(e)}"
+#         )
 
 
 async def generate_audio(text: str) -> tuple[bytes, Path]:
@@ -432,9 +535,9 @@ async def ask_sk_question(
 
         chat_history.add_user_message(question)
 
-        data = retriever.invoke(question)
+        # data = retriever.invoke(question)
         args = KernelArguments(
-            data=data,
+            # data=data,
             input=question,
             history="\n".join(
                 [f"{msg.role}: {msg.content}" for msg in chat_history.messages]
@@ -541,20 +644,4 @@ async def get_chat_history(session_id: str):
     return history
 
 
-########################## END ############################
-########################## END ############################
-########################## END ############################
-########################## END ############################
-########################## END ############################
-########################## END ############################
-########################## END ############################
-########################## END ############################
-########################## END ############################
-########################## END ############################
-########################## END ############################
-########################## END ############################
-########################## END ############################
-########################## END ############################
-########################## END ############################
-########################## END ############################
 ########################## END ############################
