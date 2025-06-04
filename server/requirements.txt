@@ -11,3 +11,4 @@ elevenlabs
 python-dotenv
 asyncio
 azure-search-documents==11.5.1
+azure-cognitiveservices-speech
