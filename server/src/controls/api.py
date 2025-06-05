@@ -22,11 +22,11 @@ from semantic_kernel.connectors.ai.open_ai import (
 from semantic_kernel.contents.chat_history import ChatHistory
 from semantic_kernel.functions.kernel_arguments import KernelArguments
 from semantic_kernel.prompt_template import PromptTemplateConfig
-from src.models.db_services import ChatSession, Message, mongo_manager
 
 import azure.cognitiveservices.speech as speechsdk
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
+from src.models.db_services import ChatSession, Message, mongo_manager
 
 BASE_DIR = Path(__file__).parent.parent
 templates = Jinja2Templates(directory=BASE_DIR / "view/templates")
@@ -157,7 +157,9 @@ class VectorAnswerResponse(BaseModel):
     answer: str
 
 
-@router.get("/", response_class=HTMLResponse)
+@router.get(
+    "/", response_class=HTMLResponse
+)  # TODO: Add session for each new visit, so users doesn't effect each other
 async def index(request: Request):
     try:
         return templates.TemplateResponse(
@@ -241,7 +243,7 @@ async def ask_me(
                 {
                     "role": "system",
                     "content": """
-                    You are Abdulrahman's smart assistant and you are here to assist with any questions about him (Abdulrahman).
+                    You are Abdulrahman's smart assistant and your nickname is Abood and you are here to assist with any questions about him (Abdulrahman/Abood).
                     Answer the question using the vector AI search, which is by using the extra_body.
                     If any irrelevant/out of the data source question is asked say "Sorry, can't help with thatI don't have enough information".
                     Make the response more user friendly.
