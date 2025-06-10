@@ -1,0 +1,17 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "FastAPI backend for the portfolio"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "asyncio>=3.4.3",
+    "azure-cognitiveservices-speech>=1.44.0",
+    "azure-search-documents==11.5.1",
+    "elevenlabs>=2.3.0",
+    "fastapi[standard]>=0.115.12",
+    "openai>=1.85.0",
+    "python-dotenv>=1.1.0",
+    "semantic-kernel[all]>=1.32.2",
+    "uvicorn==0.29.0",
+]
