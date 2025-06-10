@@ -3,6 +3,7 @@ import base64
 import json
 import logging
 import os
+import re
 import uuid
 from pathlib import Path
 from typing import List, Optional
@@ -284,10 +285,8 @@ async def ask_me(
 
         # 4. Extract confidence from completion
         answer = response.choices[0].message.content
-
-        return VectorAnswerResponse(
-            answer=answer,
-        )
+        filter_answer = re.sub(r"\s*\[.*?\]\s*", " ", answer).strip()
+        return VectorAnswerResponse(answer=filter_answer)
 
     except Exception as e:
         logger.error(f"Question processing failed: {str(e)}")
