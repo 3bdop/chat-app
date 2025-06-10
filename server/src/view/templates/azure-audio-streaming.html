@@ -739,10 +739,12 @@
     <speak version="1.0" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="${langCode}">
       <voice name="${voiceName}">
         <mstts:viseme type="FacialExpression" />
-        ${text
+        <prosody rate="-18%">
+          ${text
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')}
+        </prosody>
       </voice>
     </speak>`;
       }
