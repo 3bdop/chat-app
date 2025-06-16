@@ -12,21 +12,6 @@ html {
   overflow: hidden;
 }
 
-/* Animated gradient background */
-/* @keyframes gradientShift {
-      0% {
-        background-position: 0% 50%;
-      }
-
-      50% {
-        background-position: 100% 50%;
-      }
-
-      100% {
-        background-position: 0% 50%;
-      }
-    } */
-
 /* Add subtle overlay pattern */
 body::before {
   content: "";
@@ -111,18 +96,18 @@ body::after {
 #controls {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
   position: absolute;
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  width: 80%;
-  max-width: 600px;
-  height: 40px;
+  width: 90%;
+  max-width: 700px;
+  height: 70px;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 0 15px;
+  border-radius: 25px;
+  padding: 0 20px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   z-index: 10;
@@ -130,49 +115,40 @@ body::after {
 
 #text {
   flex: 1;
-  font-size: 20px;
-  height: 100%;
-  padding: 5px 10px;
+  font-size: 18px;
+  height: 40px;
+  padding: 5px 15px;
   box-sizing: border-box;
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
-  border-radius: 15px;
+  border-radius: 20px;
   outline: none;
+  transition: all 0.3s ease;
+}
+
+#text:focus {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
 }
 
 #text::placeholder {
   color: rgba(255, 255, 255, 0.7);
 }
 
-#speak {
-  width: 100px;
-  height: 100%;
-  font-size: 16px;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
-  border-radius: 15px;
-  transition: all 0.3s ease;
-}
-
-#speak:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.05);
-}
-
 /* Settings toggle button */
 #settings-button {
-  width: 80px;
-  height: 100%;
-  font-size: 16px;
+  height: 40px;
+  padding: 0 16px;
+  font-size: 14px;
   background: rgba(0, 0, 0, 0.3);
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 15px;
+  border-radius: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
+  white-space: nowrap;
 }
 
 #settings-button:hover {
@@ -180,15 +156,323 @@ body::after {
   transform: scale(1.05);
 }
 
+/* Uiverse Button Styles */
+.uiverse {
+  --duration: 7s;
+  --easing: linear;
+  --c-color-1: rgba(255, 163, 26, 0.7);
+  --c-color-2: #1a23ff;
+  --c-color-3: #e21bda;
+  --c-color-4: rgba(255, 232, 26, 0.7);
+  --c-shadow: rgba(255, 223, 87, 0.5);
+  --c-shadow-inset-top: rgba(255, 223, 52, 0.9);
+  --c-shadow-inset-bottom: rgba(255, 250, 215, 0.8);
+  --c-radial-inner: #ffd215;
+  --c-radial-outer: #fff172;
+  --c-color: #fff;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
+  outline: none;
+  position: relative;
+  cursor: pointer;
+  border: none;
+  display: table;
+  border-radius: 24px;
+  padding: 0;
+  margin: 0;
+  text-align: center;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  color: var(--c-color);
+  background: radial-gradient(
+    circle,
+    var(--c-radial-inner),
+    var(--c-radial-outer) 80%
+  );
+  box-shadow: 0 0 14px var(--c-shadow);
+  height: 40px;
+}
+
+.uiverse:before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 24px;
+  box-shadow: inset 0 3px 12px var(--c-shadow-inset-top),
+    inset 0 -3px 4px var(--c-shadow-inset-bottom);
+}
+
+.uiverse .wrapper {
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  overflow: hidden;
+  border-radius: 24px;
+  min-width: 120px;
+  padding: 10px 0;
+  height: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.uiverse .wrapper span {
+  display: inline-block;
+  position: relative;
+  z-index: 1;
+}
+
+.uiverse:hover {
+  --duration: 1400ms;
+}
+
+.uiverse .wrapper .circle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  filter: blur(var(--blur, 8px));
+  background: var(--background, transparent);
+  transform: translate(var(--x, 0), var(--y, 0)) translateZ(0);
+  animation: var(--animation, none) var(--duration) var(--easing) infinite;
+}
+
+.uiverse .wrapper .circle.circle-1,
+.uiverse .wrapper .circle.circle-9,
+.uiverse .wrapper .circle.circle-10 {
+  --background: var(--c-color-4);
+}
+
+.uiverse .wrapper .circle.circle-3,
+.uiverse .wrapper .circle.circle-4 {
+  --background: var(--c-color-2);
+  --blur: 14px;
+}
+
+.uiverse .wrapper .circle.circle-5,
+.uiverse .wrapper .circle.circle-6 {
+  --background: var(--c-color-3);
+  --blur: 16px;
+}
+
+.uiverse .wrapper .circle.circle-2,
+.uiverse .wrapper .circle.circle-7,
+.uiverse .wrapper .circle.circle-8,
+.uiverse .wrapper .circle.circle-11,
+.uiverse .wrapper .circle.circle-12 {
+  --background: var(--c-color-1);
+  --blur: 12px;
+}
+
+.uiverse .wrapper .circle.circle-1 {
+  --x: 0;
+  --y: -40px;
+  --animation: circle-1;
+}
+
+.uiverse .wrapper .circle.circle-2 {
+  --x: 92px;
+  --y: 8px;
+  --animation: circle-2;
+}
+
+.uiverse .wrapper .circle.circle-3 {
+  --x: -12px;
+  --y: -12px;
+  --animation: circle-3;
+}
+
+.uiverse .wrapper .circle.circle-4 {
+  --x: 80px;
+  --y: -12px;
+  --animation: circle-4;
+}
+
+.uiverse .wrapper .circle.circle-5 {
+  --x: 12px;
+  --y: -4px;
+  --animation: circle-5;
+}
+
+.uiverse .wrapper .circle.circle-6 {
+  --x: 56px;
+  --y: 16px;
+  --animation: circle-6;
+}
+
+.uiverse .wrapper .circle.circle-7 {
+  --x: 8px;
+  --y: 28px;
+  --animation: circle-7;
+}
+
+.uiverse .wrapper .circle.circle-8 {
+  --x: 28px;
+  --y: -4px;
+  --animation: circle-8;
+}
+
+.uiverse .wrapper .circle.circle-9 {
+  --x: 20px;
+  --y: -12px;
+  --animation: circle-9;
+}
+
+.uiverse .wrapper .circle.circle-10 {
+  --x: 64px;
+  --y: 16px;
+  --animation: circle-10;
+}
+
+.uiverse .wrapper .circle.circle-11 {
+  --x: 4px;
+  --y: 4px;
+  --animation: circle-11;
+}
+
+.uiverse .wrapper .circle.circle-12 {
+  --blur: 14px;
+  --x: 52px;
+  --y: 4px;
+  --animation: circle-12;
+}
+
+@keyframes circle-1 {
+  33% {
+    transform: translate(0px, 16px) translateZ(0);
+  }
+
+  66% {
+    transform: translate(12px, 64px) translateZ(0);
+  }
+}
+
+@keyframes circle-2 {
+  33% {
+    transform: translate(80px, -10px) translateZ(0);
+  }
+
+  66% {
+    transform: translate(72px, -48px) translateZ(0);
+  }
+}
+
+@keyframes circle-3 {
+  33% {
+    transform: translate(20px, 12px) translateZ(0);
+  }
+
+  66% {
+    transform: translate(12px, 4px) translateZ(0);
+  }
+}
+
+@keyframes circle-4 {
+  33% {
+    transform: translate(76px, -12px) translateZ(0);
+  }
+
+  66% {
+    transform: translate(112px, -8px) translateZ(0);
+  }
+}
+
+@keyframes circle-5 {
+  33% {
+    transform: translate(84px, 28px) translateZ(0);
+  }
+
+  66% {
+    transform: translate(40px, -32px) translateZ(0);
+  }
+}
+
+@keyframes circle-6 {
+  33% {
+    transform: translate(28px, -16px) translateZ(0);
+  }
+
+  66% {
+    transform: translate(76px, -56px) translateZ(0);
+  }
+}
+
+@keyframes circle-7 {
+  33% {
+    transform: translate(8px, 28px) translateZ(0);
+  }
+
+  66% {
+    transform: translate(20px, -60px) translateZ(0);
+  }
+}
+
+@keyframes circle-8 {
+  33% {
+    transform: translate(32px, -4px) translateZ(0);
+  }
+
+  66% {
+    transform: translate(56px, -20px) translateZ(0);
+  }
+}
+
+@keyframes circle-9 {
+  33% {
+    transform: translate(20px, -12px) translateZ(0);
+  }
+
+  66% {
+    transform: translate(80px, -8px) translateZ(0);
+  }
+}
+
+@keyframes circle-10 {
+  33% {
+    transform: translate(68px, 20px) translateZ(0);
+  }
+
+  66% {
+    transform: translate(100px, 28px) translateZ(0);
+  }
+}
+
+@keyframes circle-11 {
+  33% {
+    transform: translate(4px, 4px) translateZ(0);
+  }
+
+  66% {
+    transform: translate(68px, 20px) translateZ(0);
+  }
+}
+
+@keyframes circle-12 {
+  33% {
+    transform: translate(56px, 0px) translateZ(0);
+  }
+
+  66% {
+    transform: translate(60px, -32px) translateZ(0);
+  }
+}
+
 /* Collapsible Settings Panel with glassmorphism */
 #settings-panel {
   position: absolute;
-  top: 60px;
-  right: 20%;
-  width: 220px;
+  top: 100px;
+  right: 5%;
+  width: 250px;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(15px);
-  padding: 15px;
+  padding: 20px;
   border-radius: 15px;
   display: none;
   z-index: 998;
@@ -245,16 +529,17 @@ body.show-settings #settings-panel {
   }
 }
 
-/* Loading text at bottom-left with glassmorphism */
+/* Loading text at bottom with glassmorphism */
 #loading {
   display: block;
   position: absolute;
-  bottom: 10px;
-  left: 30%;
-  width: 80%;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
   max-width: 600px;
   height: 40px;
-  font-size: 20px;
+  font-size: 16px;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border-radius: 20px;
@@ -268,9 +553,9 @@ body.show-settings #settings-panel {
 
 #subtitles {
   position: absolute;
-  bottom: 70px;
-  left: 10%;
-  right: 10%;
+  bottom: 80px;
+  left: 5%;
+  right: 5%;
   text-align: center;
   font-size: 1.2em;
   color: #ffffff;
@@ -285,48 +570,11 @@ body.show-settings #settings-panel {
   display: none;
 }
 
-#lipsync-type {
-  text-align: left;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  padding: 10px;
-  margin-top: 15px;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-#lipsync-type legend {
-  color: white;
-  font-weight: bold;
-  padding: 0 10px;
-  font-size: 0.9rem;
-}
-
-#lipsync-type label {
-  display: inline-flex;
-  align-items: center;
-  margin-right: 1rem;
-  margin-top: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: white;
-}
-
-#lipsync-type label:hover {
-  transform: scale(1.05);
-}
-
-#lipsync-type label input[type="radio"] {
-  display: inline-block !important;
-  width: auto !important;
-  margin-right: 0.5rem;
-  accent-color: #3d78ff;
-}
-
 #view {
   text-align: left;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 10px;
-  padding: 10px;
+  padding: 15px;
   margin-top: 15px;
   background: rgba(255, 255, 255, 0.05);
 }
@@ -376,4 +624,278 @@ body.show-settings #settings-panel {
 
 button:active {
   animation: pulse 0.6s;
+}
+
+/* ========== MOBILE RESPONSIVE STYLES ========== */
+
+/* Tablet breakpoint */
+@media screen and (max-width: 768px) {
+  #controls {
+    width: 95%;
+    gap: 10px;
+    padding: 0 15px;
+    height: 60px;
+    top: 15px;
+  }
+
+  #settings-panel {
+    right: 2.5%;
+    width: 220px;
+    top: 85px;
+  }
+
+  #subtitles {
+    left: 2.5%;
+    right: 2.5%;
+    font-size: 1.1em;
+    bottom: 70px;
+  }
+
+  #loading {
+    width: 95%;
+    bottom: 15px;
+  }
+}
+
+/* Mobile breakpoint */
+@media screen and (max-width: 480px) {
+  body::after {
+    background-size: 100px 100px, 120px 120px, 110px 110px, 130px 130px;
+  }
+
+  #controls {
+    width: 95%;
+    gap: 8px;
+    padding: 0 12px;
+    height: 55px;
+    top: 10px;
+    flex-direction: row;
+    flex-wrap: nowrap;
+  }
+
+  #text {
+    font-size: 16px;
+    height: 35px;
+    padding: 5px 12px;
+    min-width: 0;
+  }
+
+  #settings-button {
+    height: 35px;
+    padding: 0 12px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .uiverse {
+    height: 35px;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .uiverse .wrapper {
+    min-width: 90px;
+    padding: 8px 0;
+  }
+
+  /* Mobile settings panel - make it overlay better */
+  #settings-panel {
+    position: fixed;
+    top: 75px;
+    left: 2.5%;
+    right: 2.5%;
+    width: auto;
+    max-height: 60vh;
+    overflow-y: auto;
+    border-radius: 12px;
+    padding: 15px;
+  }
+
+  #settings-panel label {
+    font-size: 0.85rem;
+    margin-top: 8px;
+  }
+
+  #settings-panel input {
+    font-size: 0.85rem;
+    padding: 6px;
+  }
+
+  #view {
+    padding: 12px;
+    margin-top: 12px;
+  }
+
+  #view legend {
+    font-size: 0.85rem;
+  }
+
+  #view label {
+    margin-right: 0.5rem;
+    margin-top: 6px;
+    font-size: 0.85rem;
+  }
+
+  /* Mobile subtitles */
+  #subtitles {
+    left: 2.5%;
+    right: 2.5%;
+    font-size: 1em;
+    bottom: 65px;
+    padding: 8px 12px;
+  }
+
+  /* Mobile loading */
+  #loading {
+    width: 95%;
+    height: 35px;
+    font-size: 14px;
+    bottom: 10px;
+    padding: 0 12px;
+  }
+
+  /* Adjust particle effects for mobile performance */
+  body::before {
+    background-image: radial-gradient(
+        circle at 20% 80%,
+        rgba(255, 255, 255, 0.08) 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 80% 20%,
+        rgba(255, 255, 255, 0.06) 0%,
+        transparent 50%
+      );
+  }
+}
+
+/* Small mobile phones */
+@media screen and (max-width: 360px) {
+  #controls {
+    padding: 0 10px;
+    gap: 6px;
+    height: 50px;
+  }
+
+  #text {
+    font-size: 14px;
+    height: 32px;
+    padding: 4px 10px;
+  }
+
+  #settings-button {
+    height: 32px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+
+  .uiverse {
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .uiverse .wrapper {
+    min-width: 80px;
+    padding: 6px 0;
+  }
+
+  #settings-panel {
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  #subtitles {
+    font-size: 0.9em;
+    padding: 6px 10px;
+  }
+
+  #loading {
+    height: 32px;
+    font-size: 12px;
+    padding: 0 10px;
+  }
+}
+
+/* Landscape orientation adjustments */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+  #controls {
+    top: 5px;
+    height: 45px;
+  }
+
+  #text {
+    height: 30px;
+    font-size: 14px;
+  }
+
+  #settings-button {
+    height: 30px;
+    font-size: 12px;
+  }
+
+  .uiverse {
+    height: 30px;
+    font-size: 13px;
+  }
+
+  #settings-panel {
+    top: 55px;
+    max-height: 50vh;
+  }
+
+  #subtitles {
+    bottom: 55px;
+    font-size: 0.9em;
+  }
+
+  #loading {
+    bottom: 5px;
+    height: 30px;
+    font-size: 13px;
+  }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+  #settings-button:hover {
+    transform: none;
+  }
+
+  #view label:hover {
+    transform: none;
+  }
+
+  /* Larger touch targets */
+  #settings-button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .uiverse {
+    min-height: 44px;
+  }
+
+  #view label {
+    min-height: 44px;
+    padding: 8px 0;
+  }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  body::after {
+    animation: none;
+  }
+
+  .uiverse .wrapper .circle {
+    animation: none;
+  }
+
+  button:active {
+    animation: none;
+  }
+
+  #settings-panel {
+    animation: none;
+  }
 }
