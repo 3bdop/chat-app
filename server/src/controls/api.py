@@ -6,7 +6,10 @@ import os
 import re
 import uuid
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
+
+import httpx
+from dotenv import load_dotenv
 
 # from arabic_buckwalter_transliteration.transliteration import arabic_to_buckwalter
 from elevenlabs.client import ElevenLabs
@@ -27,7 +30,6 @@ from semantic_kernel.prompt_template import PromptTemplateConfig
 import azure.cognitiveservices.speech as speechsdk
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
-from src.models.db_services import ChatSession, Message, mongo_manager
 
 BASE_DIR = Path(__file__).parent.parent
 templates = Jinja2Templates(directory=BASE_DIR / "view/templates")
@@ -36,6 +38,7 @@ router = APIRouter(tags=["RAG + Semantic-Kernel"])
 
 # ----------------------SK-----------------------#
 # ----------------------KEYS-----------------------#
+load_dotenv(override=True)
 DEPLOYMENT_NAME = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
 OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
@@ -45,6 +48,9 @@ search_key = os.getenv("SEARCH_SERVICE_QUERY_KEY")
 search_index = os.getenv("SEARCH_INDEX_NAME")
 search_admin_key = os.getenv("SEARCH_SERVICE_ADMIN_KEY")
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+# Azure TTS Configuration
+AZURE_TTS_KEY = os.getenv("AZURE_TTS_KEY")
+AZURE_TTS_REGION = os.getenv("AZURE_TTS_REGION")
 # ----------------------KEYS-----------------------#
 
 azure_search_client = SearchClient(
@@ -158,6 +164,19 @@ class VectorAnswerResponse(BaseModel):
     answer: str
 
 
+@router.get("/api/azure-speech-token")
+async def get_speech_token(ocp_apim_subscription_key: str = Header(None)):
+    # (Optionally require auth here)
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            f"https://{AZURE_TTS_REGION}.api.cognitive.microsoft.com/sts/v1.0/issueToken",
+            headers={"Ocp-Apim-Subscription-Key": AZURE_TTS_KEY},
+        )
+    if resp.status_code != 200:
+        raise HTTPException(resp.status_code, "Failed to fetch token")
+    return {"token": resp.text, "region": AZURE_TTS_REGION}
+
+
 @router.get(
     "/", response_class=HTMLResponse
 )  # TODO: Add session for each new visit, so users doesn't effect each other
@@ -177,59 +196,386 @@ speech_config = speechsdk.SpeechConfig(
 )
 
 
+# New response models
 class VisemeData(BaseModel):
-    offset: int  # Offset in ticks (1 tick = 100 nanoseconds)
-    id: int  # Viseme ID (0-21)
+    visemes: List[str]
+    vtimes: List[float]
+    vdurations: List[float]
+
+
+class WordData(BaseModel):
+    words: List[str]
+    wtimes: List[float]
+    wdurations: List[float]
+
+
+class BlendShapeFrame(BaseModel):
+    name: str
+    delay: float
+    dt: List[float]
+    vs: Dict[str, List[float]]
 
 
 class TTSResponse(BaseModel):
-    visemes: List[VisemeData]
-    audio_base64: str
+    answer: str
+    audio_data: str  # base64 encoded audio
+    viseme_data: Optional[VisemeData] = None
+    word_data: Optional[WordData] = None
+    blendshape_data: Optional[List[BlendShapeFrame]] = None
+    lipsync_type: str
 
 
-@router.post("/api/tts", response_model=TTSResponse)
-async def tts(req: QuestionRequest):
-    try:
-        speech_config.speech_synthesis_voice_name = "en-US-AriaNeural"
+class TTSRequest(BaseModel):
+    question: str
+    lipsync_type: str = "visemes"  # visemes, words, or blendshapes
 
-        # Create speech synthesizer with in-memory audio capture
-        speech_synthesizer = speechsdk.SpeechSynthesizer(
-            speech_config=speech_config,
-            audio_config=None,  # Capture audio in memory
+
+# Viseme mapping (same as frontend)
+VISEME_MAP = [
+    "sil",
+    "aa",
+    "aa",
+    "O",
+    "E",
+    "RR",
+    "I",
+    "U",
+    "O",
+    "O",
+    "O",
+    "I",
+    "kk",
+    "RR",
+    "nn",
+    "SS",
+    "CH",
+    "TH",
+    "FF",
+    "DD",
+    "kk",
+    "PP",
+]
+
+# Azure BlendShape mapping (same as frontend)
+AZURE_BLENDSHAPE_MAP = [
+    "eyeBlinkLeft",
+    "eyeLookDownLeft",
+    "eyeLookInLeft",
+    "eyeLookOutLeft",
+    "eyeLookUpLeft",
+    "eyeSquintLeft",
+    "eyeWideLeft",
+    "eyeBlinkRight",
+    "eyeLookDownRight",
+    "eyeLookInRight",
+    "eyeLookOutRight",
+    "eyeLookUpRight",
+    "eyeSquintRight",
+    "eyeWideRight",
+    "jawForward",
+    "jawLeft",
+    "jawRight",
+    "jawOpen",
+    "mouthClose",
+    "mouthFunnel",
+    "mouthPucker",
+    "mouthLeft",
+    "mouthRight",
+    "mouthSmileLeft",
+    "mouthSmileRight",
+    "mouthFrownLeft",
+    "mouthFrownRight",
+    "mouthDimpleLeft",
+    "mouthDimpleRight",
+    "mouthStretchLeft",
+    "mouthStretchRight",
+    "mouthRollLower",
+    "mouthRollUpper",
+    "mouthShrugLower",
+    "mouthShrugUpper",
+    "mouthPressLeft",
+    "mouthPressRight",
+    "mouthLowerDownLeft",
+    "mouthLowerDownRight",
+    "mouthUpperUpLeft",
+    "mouthUpperUpRight",
+    "browDownLeft",
+    "browDownRight",
+    "browInnerUp",
+    "browOuterUpLeft",
+    "browOuterUpRight",
+    "cheekPuff",
+    "cheekSquintLeft",
+    "cheekSquintRight",
+    "noseSneerLeft",
+    "noseSneerRight",
+    "tongueOut",
+    "headRotateZ",
+]
+
+
+def detect_language(text: str) -> str:
+    """Basic language detection: returns 'ar' or 'en'"""
+    import re
+
+    arabic_count = len(re.findall(r"[\u0600-\u06FF]", text))
+    english_count = len(re.findall(r"[A-Za-z]", text))
+    return "ar" if arabic_count > english_count else "en"
+
+
+def text_to_ssml(text: str) -> str:
+    """Convert input text to SSML with dynamic language support"""
+    lang = detect_language(text)
+
+    if lang == "ar":
+        voice_name = "ar-AE-HamdanNeural"
+        lang_code = "ar-AE"
+    else:
+        voice_name = "en-US-AndrewNeural"
+        lang_code = "en-US"
+
+    # Escape XML characters
+    escaped_text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    return f"""
+    <speak version="1.0" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="{lang_code}">
+      <voice name="{voice_name}">
+        <mstts:viseme type="FacialExpression" />
+        <prosody rate="-18%">
+          {escaped_text}
+        </prosody>
+      </voice>
+    </speak>"""
+
+
+async def process_tts_with_lipsync(text: str, lipsync_type: str) -> TTSResponse:
+    """Process text through Azure TTS and extract lipsync data"""
+
+    if not AZURE_TTS_KEY or not AZURE_TTS_REGION:
+        raise HTTPException(
+            status_code=500, detail="Azure TTS credentials not configured"
         )
 
-        # Create list to store visemes
-        visemes = []
+    # Initialize speech config
+    speech_config = speechsdk.SpeechConfig(
+        subscription=AZURE_TTS_KEY, region=AZURE_TTS_REGION
+    )
+    speech_config.set_speech_synthesis_output_format(
+        speechsdk.SpeechSynthesisOutputFormat.Raw48Khz16BitMonoPcm
+    )
 
-        # Viseme event callback
-        def viseme_cb(evt: speechsdk.SpeechSynthesisVisemeEventArgs):
-            visemes.append(VisemeData(offset=evt.audio_offset, id=evt.viseme_id))
+    # Create synthesizer with null audio config to get raw audio data
+    synthesizer = speechsdk.SpeechSynthesizer(
+        speech_config=speech_config, audio_config=None
+    )
 
-        # Subscribe to viseme events
-        speech_synthesizer.viseme_received.connect(viseme_cb)
+    # Storage for lipsync data
+    visemes_data = {"visemes": [], "vtimes": [], "vdurations": []}
+    words_data = {"words": [], "wtimes": [], "wdurations": []}
+    blendshapes_data = []
+    prev_viseme = None
+    audio_chunks = []
 
-        # Synthesize speech
-        result = speech_synthesizer.speak_text_async(req.question).get()
+    # Event handlers
+    def on_synthesizing(evt):
+        """Handle synthesizing event to collect audio chunks"""
+        if evt.result.audio_data:
+            audio_chunks.append(evt.result.audio_data)
+
+    def on_viseme_received(evt):
+        """Handle viseme events"""
+        nonlocal prev_viseme
+
+        if lipsync_type == "visemes":
+            vtime = evt.audio_offset / 10000.0  # Convert to milliseconds
+            viseme = (
+                VISEME_MAP[evt.viseme_id] if evt.viseme_id < len(VISEME_MAP) else "sil"
+            )
+
+            if prev_viseme:
+                vduration = vtime - prev_viseme["vtime"]
+                if vduration < 40:
+                    vduration = 40
+
+                visemes_data["visemes"].append(prev_viseme["viseme"])
+                visemes_data["vtimes"].append(prev_viseme["vtime"])
+                visemes_data["vdurations"].append(vduration)
+
+            prev_viseme = {"viseme": viseme, "vtime": vtime}
+
+        elif (
+            lipsync_type == "blendshapes"
+            and hasattr(evt, "animation")
+            and evt.animation
+        ):
+            try:
+                animation = json.loads(evt.animation)
+                if animation and "BlendShapes" in animation:
+                    vs = {}
+                    for i, mt_name in enumerate(AZURE_BLENDSHAPE_MAP):
+                        if i < len(animation["BlendShapes"][0]):  # Safety check
+                            vs[mt_name] = [
+                                frame[i] for frame in animation["BlendShapes"]
+                            ]
+
+                    blendshapes_data.append(
+                        {
+                            "name": "blendshapes",
+                            "delay": animation.get("FrameIndex", 0) * 1000 / 60,
+                            "dt": [1000 / 60] * len(animation["BlendShapes"]),
+                            "vs": vs,
+                        }
+                    )
+            except (json.JSONDecodeError, KeyError) as e:
+                logger.warning(f"Error parsing blendshape data: {e}")
+
+    def on_word_boundary(evt):
+        """Handle word boundary events"""
+        word = evt.text
+        time = evt.audio_offset / 10000.0  # Convert to milliseconds
+        duration = evt.duration / 10000.0
+
+        if (
+            evt.boundary_type
+            == speechsdk.SpeechSynthesisBoundaryType.PunctuationBoundary
+            and words_data["words"]
+        ):
+            # Append punctuation to last word
+            words_data["words"][-1] += word
+            words_data["wdurations"][-1] += duration
+        elif evt.boundary_type in [
+            speechsdk.SpeechSynthesisBoundaryType.WordBoundary,
+            speechsdk.SpeechSynthesisBoundaryType.PunctuationBoundary,
+        ]:
+            words_data["words"].append(word)
+            words_data["wtimes"].append(time)
+            words_data["wdurations"].append(duration)
+
+    # Connect event handlers
+    synthesizer.synthesizing.connect(on_synthesizing)
+    synthesizer.viseme_received.connect(on_viseme_received)
+    synthesizer.synthesis_word_boundary.connect(on_word_boundary)
+
+    # Generate SSML and synthesize
+    ssml = text_to_ssml(text)
+
+    try:
+        result = synthesizer.speak_ssml_async(ssml).get()
 
         if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-            # Get audio data directly from result
-            audio_data = result.audio_data
+            # Handle final viseme if needed
+            if lipsync_type == "visemes" and prev_viseme:
+                final_duration = 100
+                visemes_data["visemes"].append(prev_viseme["viseme"])
+                visemes_data["vtimes"].append(prev_viseme["vtime"])
+                visemes_data["vdurations"].append(final_duration)
 
-            # Convert to base64
-            audio_base64 = base64.b64encode(audio_data).decode("utf-8")
+            # Combine all audio chunks
+            if audio_chunks:
+                combined_audio = b"".join(audio_chunks)
+            else:
+                combined_audio = result.audio_data
 
-            return TTSResponse(audio_base64=audio_base64, visemes=visemes)
+            # Encode audio as base64
+            audio_base64 = base64.b64encode(combined_audio).decode("utf-8")
 
-        elif result.reason == speechsdk.ResultReason.Canceled:
-            cancellation_details = result.cancellation_details
+            # Prepare response data
+            response_data = {
+                "answer": text,
+                "audio_data": audio_base64,
+                "lipsync_type": lipsync_type,
+            }
+
+            if lipsync_type == "visemes" and visemes_data["visemes"]:
+                response_data["viseme_data"] = VisemeData(**visemes_data)
+
+            if lipsync_type == "blendshapes" and blendshapes_data:
+                response_data["blendshape_data"] = [
+                    BlendShapeFrame(**frame) for frame in blendshapes_data
+                ]
+
+            # Always include word data for subtitles
+            if words_data["words"]:
+                response_data["word_data"] = WordData(**words_data)
+
+            return TTSResponse(**response_data)
+
+        else:
             raise HTTPException(
-                status_code=500,
-                detail=f"Speech synthesis canceled: {cancellation_details.reason}",
+                status_code=500, detail=f"TTS synthesis failed: {result.reason}"
             )
+
     except Exception as e:
-        logger.error(f"TTS processing failed: {str(e)}")
+        logger.error(f"TTS processing error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"TTS processing failed: {str(e)}")
+
+
+# Modified endpoint
+@router.post("/api/ask-me-with-tts", response_model=TTSResponse)
+async def ask_me_with_tts(request: TTSRequest):
+    """Generate LLM response and process through TTS with lipsync data"""
+    try:
+        # Generate LLM response (existing logic)
+        response = AzureClient.chat.completions.create(
+            model=DEPLOYMENT_NAME,
+            messages=[
+                {
+                    "role": "system",
+                    "content": """
+                    You are Abdulrahman's smart assistant and your nickname is Abood and you are here to assist with any questions about him (Abdulrahman/Abood).
+                    Answer the question using the vector AI search, which is by using the extra_body.
+                    If any irrelevant/out of the data source question is asked say "Sorry, can't help with that. I don't have enough information".
+                    Make the response more user friendly.
+                        """,
+                },
+                {"role": "user", "content": request.question},
+            ],
+            max_tokens=800,
+            temperature=0.5,
+            extra_body={
+                "data_sources": [
+                    {
+                        "type": "azure_search",
+                        "parameters": {
+                            "endpoint": search_endpoint,
+                            "index_name": search_index,
+                            "key": search_key,
+                            "query_type": "vector_semantic_hybrid",
+                            "semantic_configuration": os.getenv("RANK"),
+                            "in_scope": False,
+                            "authentication": {
+                                "type": "api_key",
+                                "key": search_admin_key,
+                            },
+                            "embedding_dependency": {
+                                "deployment_name": os.getenv("EMBEDDING_MODEL_NAME"),
+                                "type": "deployment_name",
+                            },
+                            "fields_mapping": {
+                                "content_fields": ["chunk", "title"],
+                                "vector_fields": ["text_vector"],
+                            },
+                        },
+                    }
+                ],
+            },
+        )
+
+        # Extract and clean answer
+        answer = response.choices[0].message.content
+        filter_answer = re.sub(r"\s*\[.*?\]\s*", " ", answer).strip()
+
+        # Process through TTS with lipsync data
+        tts_response = await process_tts_with_lipsync(
+            filter_answer, request.lipsync_type
+        )
+
+        return tts_response
+
+    except Exception as e:
+        logger.error(f"Question processing with TTS failed: {str(e)}")
         raise HTTPException(
-            status_code=500, detail=f"Failed to process TTS request: {str(e)}"
+            status_code=500, detail=f"Failed to process question with TTS: {str(e)}"
         )
 
 
@@ -295,67 +641,38 @@ async def ask_me(
         )
 
 
-# @router.post("/api/ask", response_model=VectorAnswerResponse)
-# async def ask_question(
-#     request: QuestionRequest,
-# ):  # TODO: To use extra_body for vector search
-#     try:
-#         response = AzureClient.chat.completions.create(
-#             model=DEPLOYMENT_NAME,
-#             messages=[
-#                 {
-#                     "role": "system",
-#                     "content": """
-#                     Answer the question using the vector AI search, which is by using the extra_body.
-#                     If any irrelevant/out of the data source question is asked say "Sorry, can't help with that".
-#                         """,
-#                 },
-#                 {"role": "user", "content": request.question},
-#             ],
-#             max_tokens=800,
-#             temperature=0.3,
-#             extra_body={
-#                 "data_sources": [
-#                     {
-#                         "type": "azure_search",
-#                         "parameters": {
-#                             "endpoint": search_endpoint,
-#                             "index_name": search_index,
-#                             "key": search_key,
-#                             "query_type": "vector_semantic_hybrid",
-#                             # "query_type": "vector",
-#                             "semantic_configuration": os.getenv("RANK"),
-#                             "in_scope": False,
-#                             "authentication": {
-#                                 "type": "api_key",
-#                                 "key": search_admin_key,
-#                             },
-#                             "embedding_dependency": {
-#                                 "deployment_name": os.getenv("EMBEDDING_MODEL_NAME"),
-#                                 "type": "deployment_name",
-#                             },
-#                             "fields_mapping": {
-#                                 "content_fields": ["chunk", "title"],
-#                                 "vector_fields": ["text_vector"],
-#                             },
-#                         },
-#                     }
-#                 ],
-#             },
-#         )
+@router.post("/api/ask", response_model=VectorAnswerResponse)
+async def ask_question(
+    request: QuestionRequest,
+):  # TODO: To use extra_body for vector search
+    try:
+        response = AzureClient.chat.completions.create(
+            model=DEPLOYMENT_NAME,
+            messages=[
+                {
+                    "role": "system",
+                    "content": """
+                    Your an real time smart assistant.
+                        """,
+                },
+                {"role": "user", "content": request.question},
+            ],
+            max_tokens=800,
+            temperature=0.3,
+        )
 
-#         # 4. Extract confidence from completion
-#         answer = response.choices[0].message.content
+        # 4. Extract confidence from completion
+        answer = response.choices[0].message.content
 
-#         return VectorAnswerResponse(
-#             answer=answer,
-#         )
+        return VectorAnswerResponse(
+            answer=answer,
+        )
 
-#     except Exception as e:
-#         logger.error(f"Question processing failed: {str(e)}")
-#         raise HTTPException(
-#             status_code=500, detail=f"Failed to process question: {str(e)}"
-#         )
+    except Exception as e:
+        logger.error(f"Question processing failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to process question: {str(e)}"
+        )
 
 
 async def generate_audio(text: str) -> tuple[bytes, Path]:
@@ -525,14 +842,14 @@ async def ask_sk_question(
 
         chat_history = ChatHistory()
 
-        if session_id:
-            session = await mongo_manager.get_chat_session(session_id)
-            if session and session.messages:
-                for msg in session.messages:
-                    if msg.is_user:
-                        chat_history.add_user_message(msg.content)
-                    else:
-                        chat_history.add_assistant_message(msg.content)
+        # if session_id:
+        #     session = await mongo_manager.get_chat_session(session_id)
+        #     if session and session.messages:
+        #         for msg in session.messages:
+        #             if msg.is_user:
+        #                 chat_history.add_user_message(msg.content)
+        #             else:
+        #                 chat_history.add_assistant_message(msg.content)
 
         chat_history.add_user_message(question)
 
@@ -594,18 +911,18 @@ async def ask_sk_question(
                 )
             )
 
-        user_message = Message(content=question, is_user=True)
-        bot_message = Message(
-            content=json.dumps([m.text_en for m in message_responses]), is_user=False
-        )
+        # user_message = Message(content=question, is_user=True)
+        # bot_message = Message(
+        #     content=json.dumps([m.text_en for m in message_responses]), is_user=False
+        # )
 
         # Update chat history
-        if not session_id:
-            new_session = ChatSession(messages=[user_message, bot_message])
-            session_id = await mongo_manager.create_chat_session(new_session)
-        else:
-            await mongo_manager.update_chat_session(session_id, user_message)
-            await mongo_manager.update_chat_session(session_id, bot_message)
+        # if not session_id:
+        #     new_session = ChatSession(messages=[user_message, bot_message])
+        #     session_id = await mongo_manager.create_chat_session(new_session)
+        # else:
+        #     await mongo_manager.update_chat_session(session_id, user_message)
+        #     await mongo_manager.update_chat_session(session_id, bot_message)
 
         return AnswerResponse(messages=message_responses, session_id=session_id)
 
@@ -614,35 +931,35 @@ async def ask_sk_question(
 
 
 # ---------------------------CHAT APP GENERAL---------------------------#
-@router.get("/sessions/{session_id}", response_model=ChatSession)
-async def get_chat_session(session_id: str):
-    session = await mongo_manager.get_chat_session(session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    return session
+# @router.get("/sessions/{session_id}", response_model=ChatSession)
+# async def get_chat_session(session_id: str):
+#     session = await mongo_manager.get_chat_session(session_id)
+#     if not session:
+#         raise HTTPException(status_code=404, detail="Session not found")
+#     return session
 
 
-@router.delete("/sessions/{session_id}", response_model=ChatSession)
-async def delete_chat_session(session_id: str):
-    success = await mongo_manager.delete_chat_session(session_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Session not found")
-    return {"status": "success", "message": "chat session is delete successfully"}
+# @router.delete("/sessions/{session_id}", response_model=ChatSession)
+# async def delete_chat_session(session_id: str):
+#     success = await mongo_manager.delete_chat_session(session_id)
+#     if not success:
+#         raise HTTPException(status_code=404, detail="Session not found")
+#     return {"status": "success", "message": "chat session is delete successfully"}
 
 
-@router.get("/sessions", response_model=List[str])
-async def get_all_sessions():
-    """Get all session IDs from MongoDB"""
-    sessions = await mongo_manager.chat_history.distinct("session_id")
-    return sessions
+# @router.get("/sessions", response_model=List[str])
+# async def get_all_sessions():
+#     """Get all session IDs from MongoDB"""
+#     sessions = await mongo_manager.chat_history.distinct("session_id")
+#     return sessions
 
 
-@router.get("/history/{session_id}")
-async def get_chat_history(session_id: str):
-    history = await mongo_manager.get_chat_history_dict(session_id)
-    if not history:
-        raise HTTPException(status_code=404, detail="Session not found")
-    return history
+# @router.get("/history/{session_id}")
+# async def get_chat_history(session_id: str):
+#     history = await mongo_manager.get_chat_history_dict(session_id)
+#     if not history:
+#         raise HTTPException(status_code=404, detail="Session not found")
+#     return history
 
 
 ########################## END ############################
