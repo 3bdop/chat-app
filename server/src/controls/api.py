@@ -183,7 +183,7 @@ async def get_speech_token(ocp_apim_subscription_key: str = Header(None)):
 async def index(request: Request):
     try:
         return templates.TemplateResponse(
-            name="azure-audio-streaming.html", context={"request": request}
+            name="portfolio.html", context={"request": request}
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
