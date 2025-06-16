@@ -35,12 +35,12 @@ body::before {
       rgba(255, 255, 255, 0.05) 0%,
       transparent 50%
     );
-  pointer-events: none;
+  /* pointer-events: none; */
   z-index: 1;
 }
 
 /* Floating particles effect */
-body::after {
+/* body::after {
   content: "";
   position: absolute;
   top: 0;
@@ -49,17 +49,17 @@ body::after {
   bottom: 0;
   background-image: radial-gradient(
       circle at 10% 20%,
-      rgba(255, 255, 255, 0.2) 1px,
+      rgba(255, 255, 255, 0.778) 1px,
       transparent 1px
     ),
     radial-gradient(
       circle at 70% 80%,
-      rgba(255, 255, 255, 0.15) 1px,
+      rgba(255, 255, 255, 0.618) 1px,
       transparent 1px
     ),
     radial-gradient(
       circle at 90% 10%,
-      rgba(255, 255, 255, 0.1) 1px,
+      rgba(255, 255, 255, 0.227) 1px,
       transparent 1px
     ),
     radial-gradient(
@@ -71,7 +71,7 @@ body::after {
   animation: floatParticles 20s linear infinite;
   pointer-events: none;
   z-index: 1;
-}
+} */
 
 @keyframes floatParticles {
   0% {
@@ -83,13 +83,27 @@ body::after {
   }
 }
 
-/* The main 3D avatar container */
+/* Update avatar container */
 #avatar {
-  display: block;
-  width: 100%;
-  height: 100%;
-  position: relative;
+  width: 100vh; /* Changed from 100vw */
+  height: 100vh;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none; /* Prevents clicking/dragging */
   z-index: 2;
+}
+
+/* Add container for click prevention */
+.avatar-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 /* Controls container at top with glassmorphism effect */
@@ -898,4 +912,138 @@ button:active {
   #settings-panel {
     animation: none;
   }
+}
+/* Social media */
+.social-main {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: grid;
+  gap: 0.5em;
+  z-index: 100000;
+}
+
+.up {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5em;
+}
+
+.down {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5em;
+}
+
+.card1 {
+  width: 90px;
+  height: 90px;
+  outline: none;
+  border: none;
+  background: white;
+  border-radius: 90px 5px 5px 5px;
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px,
+    rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
+  transition: 0.2s ease-in-out;
+}
+
+.linkedin {
+  margin-top: 1.5em;
+  margin-left: 1.2em;
+  fill: #0077b5;
+}
+
+.card2 {
+  width: 90px;
+  height: 90px;
+  outline: none;
+  border: none;
+  background: white;
+  border-radius: 5px 90px 5px 5px;
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px,
+    rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
+  transition: 0.2s ease-in-out;
+}
+
+.gmail {
+  margin-top: 1.5em;
+  margin-left: -0.9em;
+  fill: #f14336;
+}
+
+.card3 {
+  width: 90px;
+  height: 90px;
+  outline: none;
+  border: none;
+  background: white;
+  border-radius: 5px 5px 5px 90px;
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px,
+    rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
+  transition: 0.2s ease-in-out;
+}
+
+.github {
+  margin-top: -0.6em;
+  margin-left: 1.2em;
+}
+
+.card4 {
+  width: 90px;
+  height: 90px;
+  outline: none;
+  border: none;
+  background: white;
+  border-radius: 5px 5px 90px 5px;
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px,
+    rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
+  transition: 0.2s ease-in-out;
+}
+
+.instagram {
+  margin-top: -0.9em;
+  margin-left: -1.2em;
+  fill: #bd39cc;
+}
+
+.card1:hover {
+  cursor: pointer;
+  scale: 1.1;
+  background-color: #0077b5;
+}
+
+.card1:hover .linkedin {
+  fill: white;
+}
+
+.card2:hover {
+  cursor: pointer;
+  scale: 1.1;
+  background-color: #ff0004;
+}
+
+.card2:hover .gmail {
+  fill: white;
+}
+
+.card3:hover {
+  cursor: pointer;
+  scale: 1.1;
+  background-color: black;
+}
+
+.card3:hover .github {
+  fill: white;
+}
+
+.card4:hover {
+  cursor: pointer;
+  scale: 1.1;
+  /* background-color: #bd39cc; */
+  background: #833ab4;
+  background: linear-gradient(30deg, #833ab4, #fd1d1d, #fcb045);
+}
+
+.card4:hover .instagram {
+  fill: white;
 }
