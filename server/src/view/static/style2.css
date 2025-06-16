@@ -1,0 +1,379 @@
+body,
+html {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  background-color: rgb(185, 183, 255);
+  background-image: linear-gradient(19deg, #09109f 0%, #ced4fb 100%);
+  color: white;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  overflow: hidden;
+}
+
+/* Animated gradient background */
+/* @keyframes gradientShift {
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
+    } */
+
+/* Add subtle overlay pattern */
+body::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(
+      circle at 20% 80%,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 80% 20%,
+      rgba(255, 255, 255, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 40% 40%,
+      rgba(255, 255, 255, 0.05) 0%,
+      transparent 50%
+    );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Floating particles effect */
+body::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(
+      circle at 10% 20%,
+      rgba(255, 255, 255, 0.2) 1px,
+      transparent 1px
+    ),
+    radial-gradient(
+      circle at 70% 80%,
+      rgba(255, 255, 255, 0.15) 1px,
+      transparent 1px
+    ),
+    radial-gradient(
+      circle at 90% 10%,
+      rgba(255, 255, 255, 0.1) 1px,
+      transparent 1px
+    ),
+    radial-gradient(
+      circle at 30% 90%,
+      rgba(255, 255, 255, 0.12) 1px,
+      transparent 1px
+    );
+  background-size: 150px 150px, 200px 200px, 180px 180px, 220px 220px;
+  animation: floatParticles 20s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes floatParticles {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  100% {
+    transform: translateY(-100vh) rotate(360deg);
+  }
+}
+
+/* The main 3D avatar container */
+#avatar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 2;
+}
+
+/* Controls container at top with glassmorphism effect */
+#controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  max-width: 600px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 0 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+#text {
+  flex: 1;
+  font-size: 20px;
+  height: 100%;
+  padding: 5px 10px;
+  box-sizing: border-box;
+  background: transparent;
+  border: none;
+  color: white;
+  border-radius: 15px;
+  outline: none;
+}
+
+#text::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+#speak {
+  width: 100px;
+  height: 100%;
+  font-size: 16px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  border-radius: 15px;
+  transition: all 0.3s ease;
+}
+
+#speak:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+/* Settings toggle button */
+#settings-button {
+  width: 80px;
+  height: 100%;
+  font-size: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#settings-button:hover {
+  background: rgba(0, 0, 0, 0.4);
+  transform: scale(1.05);
+}
+
+/* Collapsible Settings Panel with glassmorphism */
+#settings-panel {
+  position: absolute;
+  top: 60px;
+  right: 20%;
+  width: 220px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  padding: 15px;
+  border-radius: 15px;
+  display: none;
+  z-index: 998;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+#settings-panel label {
+  display: block;
+  margin-top: 10px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+#settings-panel input {
+  width: calc(100% - 10px);
+  padding: 8px;
+  margin-top: 5px;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: white;
+  outline: none;
+}
+
+#settings-panel input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+#settings-panel input:focus {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* When the body gets a class "show-settings", show the panel */
+body.show-settings #settings-panel {
+  display: block;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading text at bottom-left with glassmorphism */
+#loading {
+  display: block;
+  position: absolute;
+  bottom: 10px;
+  left: 30%;
+  width: 80%;
+  max-width: 600px;
+  height: 40px;
+  font-size: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 0 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+#subtitles {
+  position: absolute;
+  bottom: 70px;
+  left: 10%;
+  right: 10%;
+  text-align: center;
+  font-size: 1.2em;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+  z-index: 1000;
+  padding: 10px 15px;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: none;
+}
+
+#lipsync-type {
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 15px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+#lipsync-type legend {
+  color: white;
+  font-weight: bold;
+  padding: 0 10px;
+  font-size: 0.9rem;
+}
+
+#lipsync-type label {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 1rem;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white;
+}
+
+#lipsync-type label:hover {
+  transform: scale(1.05);
+}
+
+#lipsync-type label input[type="radio"] {
+  display: inline-block !important;
+  width: auto !important;
+  margin-right: 0.5rem;
+  accent-color: #3d78ff;
+}
+
+#view {
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 15px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+#view legend {
+  color: white;
+  font-weight: bold;
+  padding: 0 10px;
+  font-size: 0.9rem;
+}
+
+#view label {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 1rem;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white;
+}
+
+#view label:hover {
+  transform: scale(1.05);
+}
+
+#view label input[type="radio"] {
+  display: inline-block !important;
+  width: auto !important;
+  margin-right: 0.5rem;
+  accent-color: #3d78ff;
+}
+
+/* Add pulse animation for interactive elements */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(61, 120, 255, 0.7);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(61, 120, 255, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(61, 120, 255, 0);
+  }
+}
+
+button:active {
+  animation: pulse 0.6s;
+}
