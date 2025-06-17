@@ -142,9 +142,9 @@ body::before {
 }
 
 #text:focus {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.266);
   border-color: rgba(255, 255, 255, 0.4);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.364);
 }
 
 #text::placeholder {
@@ -943,7 +943,11 @@ button:active {
   height: 20.5rem;
   width: 20.5rem;
   border-radius: 9999px;
-  background: linear-gradient(144deg, #af40ff, #46dae5);
+  background: linear-gradient(
+    144deg,
+    rgba(175, 64, 255, 0.644),
+    rgba(210, 229, 70, 0.796)
+  );
   animation: rotate 1.5s linear infinite;
 }
 .backdrop::after {
@@ -961,7 +965,7 @@ button:active {
   --rd-light-hover: 9999px;
   --l-light-hover: 14px;
   --cl-light: #0000;
-  --cr-light: #af40ff;
+  --cr-light: rgba(175, 64, 255, 0.4);
   position: relative;
   display: flex;
   align-items: center;
@@ -984,7 +988,7 @@ button:active {
   z-index: 9;
   padding: 0.5rem;
   border-radius: 9999px;
-  background-color: #f1f1f1;
+  background-color: rgba(241, 241, 241, 0.8);
   transition: transform, color, background, 300ms ease;
 }
 
@@ -992,8 +996,8 @@ button:active {
   --sz-light-hover: 100px;
   --rd-light-hover: 6px;
   --l-light-hover: 0px;
-  --cl-light: #fff;
-  --cr-light: #af40ff;
+  --cl-light: rgba(255, 255, 255, 0.5);
+  --cr-light: rgba(175, 64, 255, 0.4);
   transition: transform, 400ms ease;
   opacity: 0;
   font-size: 1.25rem;
@@ -1012,7 +1016,7 @@ button:active {
   position: absolute;
   left: 0;
   z-index: -1;
-  border: 1px solid #ccc;
+  border: 1px solid rgba(204, 204, 204, 0.5);
 }
 
 .action-content::before {
@@ -1023,7 +1027,7 @@ button:active {
   font-weight: 600;
   z-index: 1;
   transform: translateX(-100%);
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.9);
   border-radius: calc(var(--rd-light-hover) - 2px);
   padding-inline: 4px;
 }
@@ -1051,7 +1055,7 @@ button:active {
 
 .action:hover .action-icon {
   color: #000;
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.95);
   transform: scale(1.4) translate3d(12px, 0px, 12px);
 }
 
@@ -1074,7 +1078,7 @@ button:active {
 
 .action:hover .action-content {
   color: #000;
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.9);
   opacity: 1;
   width: max-content;
   height: 20px;
