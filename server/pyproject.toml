@@ -10,6 +10,7 @@ dependencies = [
     "azure-search-documents==11.5.1",
     "elevenlabs>=2.3.0",
     "fastapi[standard]>=0.115.12",
+    "gunicorn>=23.0.0",
     "openai>=1.85.0",
     "python-dotenv>=1.1.0",
     "semantic-kernel>=1.32.2",
