@@ -103,7 +103,7 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 /* Controls container at top with glassmorphism effect */
