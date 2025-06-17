@@ -119,6 +119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const nodeSpeak = document.getElementById('speak');
     const nodeLoading = document.getElementById('loading');
     const settingsButton = document.getElementById('settings-button');
+    const inputText = document.getElementById('text')
 
 
     // Initialize TalkingHead
@@ -157,6 +158,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
         // Hide the loading element once fully loaded
         nodeLoading.style.display = 'none';
+        // playWelcomeMessage(); //TODO
     } catch (error) {
         console.error("Error loading avatar:", error);
         nodeLoading.textContent = "Failed to load avatar.";
@@ -224,44 +226,78 @@ document.addEventListener('DOMContentLoaded', async () => {
         return duration;
     }
 
+    async function handleSpeak() {
+        const question = inputText.value.trim();
 
-    // MODIFIED: Handle speech button click
-    nodeSpeak.addEventListener('click', async () => {
-        const question = document.getElementById('text').value.trim();
-        // lipsyncType = document.querySelector('input[name="lipsync_type"]:checked').value;
-        // Check if we're already processing a request
         if (isProcessing) {
             console.log("Please wait until current request is completed");
             return;
         }
 
-
         if (question) {
-            // Show loading state
-            // head.streamStart()
             nodeSpeak.disabled = true;
-            // nodeSpeak.textContent = "Thinking...";
             document.getElementById('btn-txt').textContent = 'Thinking...';
             document.getElementById('speak').disabled = true;
 
-
             try {
-                // Get answer from backend
                 const answer = await getAnswerFromBackend(question);
-
-                // Generate SSML and speak - WITHOUT modifying the input field
                 const ssml = textToSSML(answer);
                 azureSpeak(ssml);
             } catch (error) {
                 console.error("Error:", error);
                 alert("Failed to get response from the assistant.");
-            } finally {
-                // Restore button state
-                // nodeSpeak.disabled = false;
-                // nodeSpeak.textContent = "Speak";
             }
         }
+    }
+
+    // Handle button click
+    nodeSpeak.addEventListener('click', handleSpeak);
+
+    // Handle Enter press in input
+    inputText.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSpeak();
+        }
     });
+
+    // MODIFIED: Handle speech button click
+    // nodeSpeak.addEventListener('click', async () => {
+    //     const question = document.getElementById('text').value.trim();
+    //     // lipsyncType = document.querySelector('input[name="lipsync_type"]:checked').value;
+    //     // Check if we're already processing a request
+    //     if (isProcessing) {
+    //         console.log("Please wait until current request is completed");
+    //         return;
+    //     }
+
+
+    //     if (question) {
+    //         // Show loading state
+    //         // head.streamStart()
+    //         nodeSpeak.disabled = true;
+    //         // nodeSpeak.textContent = "Thinking...";
+    //         document.getElementById('btn-txt').textContent = 'Thinking...';
+    //         document.getElementById('speak').disabled = true;
+
+
+    //         try {
+    //             // Get answer from backend
+    //             const answer = await getAnswerFromBackend(question);
+
+    //             // Generate SSML and speak - WITHOUT modifying the input field
+    //             const ssml = textToSSML(answer);
+    //             azureSpeak(ssml);
+    //         } catch (error) {
+    //             console.error("Error:", error);
+    //             alert("Failed to get response from the assistant.");
+    //         } finally {
+    //             // Restore button state
+    //             // nodeSpeak.disabled = false;
+    //             // nodeSpeak.textContent = "Speak";
+    //         }
+    //     }
+    // });
     // Pause/resume animation on visibility change
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
@@ -529,6 +565,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         );
     }
+
+    //TODO: a work around for auto welcom playing
+    // function playWelcomeMessage() {
+    //     const welcomeMessage = `Hello there! I'm Abdulrahman's smart assistant. I'm here to help answer any questions you have about him.`;
+
+    //     // Use existing SSML function
+    //     const ssml = textToSSML(welcomeMessage);
+    //     azureSpeak(ssml);
+    // }
 
     // Toggle the settings panel on/off
     settingsButton.addEventListener('click', () => {
