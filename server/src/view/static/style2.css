@@ -914,6 +914,12 @@ button:active {
   }
 }
 /* Social media */
+/* SIZE CONTROL - Update these values to resize the whole component */
+:root {
+  --action-size: 2.5rem; /* Main button size - was 3.5rem */
+  --backdrop-size: 14rem; /* Rotating backdrop - was 20.5rem */
+}
+
 .action-wrap {
   position: fixed;
   display: grid;
@@ -940,13 +946,13 @@ button:active {
 .backdrop::before {
   content: "";
   position: absolute;
-  height: 20.5rem;
-  width: 20.5rem;
+  height: var(--backdrop-size);
+  width: var(--backdrop-size);
   border-radius: 9999px;
   background: linear-gradient(
     144deg,
-    rgba(175, 64, 255, 0.644),
-    rgba(210, 229, 70, 0.796)
+    rgba(175, 64, 255, 0.3),
+    rgba(70, 218, 229, 0.3)
   );
   animation: rotate 1.5s linear infinite;
 }
@@ -961,9 +967,9 @@ button:active {
 }
 
 .action {
-  --sz-light-hover: 60px;
+  --sz-light-hover: 45px; /* Reduced from 60px */
   --rd-light-hover: 9999px;
-  --l-light-hover: 14px;
+  --l-light-hover: 10px; /* Reduced from 14px */
   --cl-light: #0000;
   --cr-light: rgba(175, 64, 255, 0.4);
   position: relative;
@@ -971,13 +977,13 @@ button:active {
   align-items: center;
   justify-content: center;
   transition: transform, color, background-color, 300ms ease;
-  height: 3.5rem;
-  width: 3.5rem;
+  height: var(--action-size);
+  width: var(--action-size);
   border: none;
   color: #444444;
   background: none transparent;
   cursor: pointer;
-  padding: 0.5rem;
+  padding: 0.35rem; /* Reduced from 0.5rem */
   border-radius: 9999px;
 }
 
@@ -986,22 +992,22 @@ button:active {
   width: 100%;
   position: relative;
   z-index: 9;
-  padding: 0.5rem;
+  padding: 0.35rem; /* Reduced from 0.5rem */
   border-radius: 9999px;
   background-color: rgba(241, 241, 241, 0.8);
   transition: transform, color, background, 300ms ease;
 }
 
 .action-content {
-  --sz-light-hover: 100px;
+  --sz-light-hover: 70px; /* Reduced from 100px */
   --rd-light-hover: 6px;
   --l-light-hover: 0px;
   --cl-light: rgba(255, 255, 255, 0.5);
   --cr-light: rgba(175, 64, 255, 0.4);
   transition: transform, 400ms ease;
   opacity: 0;
-  font-size: 1.25rem;
-  line-height: 1.5;
+  font-size: 1rem; /* Reduced from 1.25rem */
+  line-height: 1.4; /* Reduced from 1.5 */
   background-color: inherit;
   border-radius: 6px;
   overflow: hidden;
@@ -1011,8 +1017,8 @@ button:active {
   flex-wrap: nowrap;
   flex-direction: row;
   width: max-content;
-  height: 1.75rem;
-  padding: 8px 1px;
+  height: 1.5rem; /* Reduced from 1.75rem */
+  padding: 6px 1px; /* Reduced from 8px 1px */
   position: absolute;
   left: 0;
   z-index: -1;
@@ -1023,13 +1029,13 @@ button:active {
   content: attr(data-content);
   transition: transform, 300ms ease;
   text-transform: capitalize;
-  font-size: medium;
+  font-size: small; /* Reduced from medium */
   font-weight: 600;
   z-index: 1;
   transform: translateX(-100%);
   background-color: rgba(255, 255, 255, 0.9);
   border-radius: calc(var(--rd-light-hover) - 2px);
-  padding-inline: 4px;
+  padding-inline: 3px; /* Reduced from 4px */
 }
 
 .action::after,
@@ -1081,47 +1087,11 @@ button:active {
   background-color: rgba(255, 255, 255, 0.9);
   opacity: 1;
   width: max-content;
-  height: 20px;
-  left: calc(100% + 24px);
+  height: 18px; /* Reduced from 20px */
+  left: calc(100% + 18px); /* Reduced spacing from 24px */
   z-index: 9;
 }
 
 .action:hover .action-content::before {
   transform: translateX(0px);
-}
-
-/* dotBackground.css */
-
-/* Tiled dot pattern */
-.dot-pattern {
-  position: absolute;
-  inset: 0;
-  background-size: 20px 20px;
-  background-image: radial-gradient(#d4d4d4 1px, transparent 1px);
-}
-
-.dark .dot-pattern {
-  background-image: radial-gradient(#000000 1px, transparent 1px);
-}
-
-/* Faded vignette mask */
-.dot-mask {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgb(3, 3, 3);
-  /* fade out toward edges */
-  -webkit-mask-image: radial-gradient(
-    ellipse at center,
-    transparent 20%,
-    black 100%
-  );
-  mask-image: radial-gradient(ellipse at center, transparent 20%, black 100%);
-}
-
-.dark .dot-mask {
-  background-color: black;
 }
