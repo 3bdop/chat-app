@@ -913,6 +913,42 @@ button:active {
     animation: none;
   }
 }
+/* dotBackground.css */
+
+/* Tiled dot pattern */
+.dot-pattern {
+  position: absolute;
+  inset: 0;
+  background-size: 20px 20px;
+  background-image: radial-gradient(#d4d4d4 1px, transparent 1px);
+}
+
+.dark .dot-pattern {
+  background-image: radial-gradient(#404040 1px, transparent 1px);
+}
+
+/* Faded vignette mask */
+.dot-mask {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgb(6, 6, 6);
+  /* fade out toward edges */
+  -webkit-mask-image: radial-gradient(
+    ellipse at center,
+    transparent 20%,
+    black 100%
+  );
+  mask-image: radial-gradient(ellipse at center, transparent 20%, black 100%);
+}
+
+.dark .dot-mask {
+  background-color: black;
+}
+
 /* Social media */
 /* SIZE CONTROL - Update these values to resize the whole component */
 :root {
@@ -952,7 +988,7 @@ button:active {
   background: linear-gradient(
     144deg,
     rgba(175, 64, 255, 0.3),
-    rgba(70, 218, 229, 0.3)
+    rgba(229, 229, 70, 0.3)
   );
   animation: rotate 1.5s linear infinite;
 }
