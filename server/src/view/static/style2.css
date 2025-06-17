@@ -5,10 +5,10 @@ html {
   margin: 0;
   padding: 0;
   position: relative;
-  background-color: rgb(185, 183, 255);
-  background-image: linear-gradient(19deg, #09109f 0%, #ced4fb 100%);
-  color: white;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: rgb(0, 0, 0);
+  /* background-image: linear-gradient(19deg, #05050f 0%, #474747 100%); */
+  /* color: white; */
+  /* font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; */
   overflow: hidden;
 }
 
@@ -914,136 +914,210 @@ button:active {
   }
 }
 /* Social media */
-.social-main {
+.action-wrap {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
   display: grid;
-  gap: 0.5em;
-  z-index: 100000;
+  bottom: 35px;
+  left: 20px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  border-radius: 9999px;
+  z-index: 99999;
 }
 
-.up {
+.backdrop {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  border-radius: 9999px;
   display: flex;
-  flex-direction: row;
-  gap: 0.5em;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.backdrop::before {
+  content: "";
+  position: absolute;
+  height: 20.5rem;
+  width: 20.5rem;
+  border-radius: 9999px;
+  background: linear-gradient(144deg, #af40ff, #46dae5);
+  animation: rotate 1.5s linear infinite;
+}
+.backdrop::after {
+  content: "";
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  backdrop-filter: blur(8px);
+  border-radius: 9999px;
+  z-index: 1;
 }
 
-.down {
+.action {
+  --sz-light-hover: 60px;
+  --rd-light-hover: 9999px;
+  --l-light-hover: 14px;
+  --cl-light: #0000;
+  --cr-light: #af40ff;
+  position: relative;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform, color, background-color, 300ms ease;
+  height: 3.5rem;
+  width: 3.5rem;
+  border: none;
+  color: #444444;
+  background: none transparent;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 9999px;
+}
+
+.action-icon {
+  height: 60%;
+  width: 100%;
+  position: relative;
+  z-index: 9;
+  padding: 0.5rem;
+  border-radius: 9999px;
+  background-color: #f1f1f1;
+  transition: transform, color, background, 300ms ease;
+}
+
+.action-content {
+  --sz-light-hover: 100px;
+  --rd-light-hover: 6px;
+  --l-light-hover: 0px;
+  --cl-light: #fff;
+  --cr-light: #af40ff;
+  transition: transform, 400ms ease;
+  opacity: 0;
+  font-size: 1.25rem;
+  line-height: 1.5;
+  background-color: inherit;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
   flex-direction: row;
-  gap: 0.5em;
+  width: max-content;
+  height: 1.75rem;
+  padding: 8px 1px;
+  position: absolute;
+  left: 0;
+  z-index: -1;
+  border: 1px solid #ccc;
 }
 
-.card1 {
-  width: 90px;
-  height: 90px;
-  outline: none;
-  border: none;
-  background: white;
-  border-radius: 90px 5px 5px 5px;
-  box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px,
-    rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
-  transition: 0.2s ease-in-out;
+.action-content::before {
+  content: attr(data-content);
+  transition: transform, 300ms ease;
+  text-transform: capitalize;
+  font-size: medium;
+  font-weight: 600;
+  z-index: 1;
+  transform: translateX(-100%);
+  background-color: #fff;
+  border-radius: calc(var(--rd-light-hover) - 2px);
+  padding-inline: 4px;
 }
 
-.linkedin {
-  margin-top: 1.5em;
-  margin-left: 1.2em;
-  fill: #0077b5;
+.action::after,
+.action-content::after {
+  content: "";
+  opacity: 0;
+  position: absolute;
+  border-radius: var(--rd-light-hover);
+  transition: all 50ms ease 200ms;
+  background: conic-gradient(
+    from 45deg at 50% 50%,
+    var(--cl-light),
+    var(--cr-light),
+    var(--cl-light),
+    var(--cl-light),
+    var(--cl-light),
+    var(--cr-light),
+    var(--cl-light),
+    var(--cl-light),
+    var(--cl-light)
+  );
 }
 
-.card2 {
-  width: 90px;
-  height: 90px;
-  outline: none;
-  border: none;
-  background: white;
-  border-radius: 5px 90px 5px 5px;
-  box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px,
-    rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
-  transition: 0.2s ease-in-out;
+.action:hover .action-icon {
+  color: #000;
+  background-color: #fff;
+  transform: scale(1.4) translate3d(12px, 0px, 12px);
 }
 
-.gmail {
-  margin-top: 1.5em;
-  margin-left: -0.9em;
-  fill: #f14336;
+.action:hover::after,
+.action-content::after {
+  height: var(--sz-light-hover);
+  width: var(--sz-light-hover);
+  left: var(--l-light-hover);
+  opacity: 1;
+  animation: rotate 4s linear infinite;
+}
+@keyframes rotate {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(1turn);
+  }
 }
 
-.card3 {
-  width: 90px;
-  height: 90px;
-  outline: none;
-  border: none;
-  background: white;
-  border-radius: 5px 5px 5px 90px;
-  box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px,
-    rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
-  transition: 0.2s ease-in-out;
+.action:hover .action-content {
+  color: #000;
+  background-color: #fff;
+  opacity: 1;
+  width: max-content;
+  height: 20px;
+  left: calc(100% + 24px);
+  z-index: 9;
 }
 
-.github {
-  margin-top: -0.6em;
-  margin-left: 1.2em;
+.action:hover .action-content::before {
+  transform: translateX(0px);
 }
 
-.card4 {
-  width: 90px;
-  height: 90px;
-  outline: none;
-  border: none;
-  background: white;
-  border-radius: 5px 5px 90px 5px;
-  box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px,
-    rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
-  transition: 0.2s ease-in-out;
+/* dotBackground.css */
+
+/* Tiled dot pattern */
+.dot-pattern {
+  position: absolute;
+  inset: 0;
+  background-size: 20px 20px;
+  background-image: radial-gradient(#d4d4d4 1px, transparent 1px);
 }
 
-.instagram {
-  margin-top: -0.9em;
-  margin-left: -1.2em;
-  fill: #bd39cc;
+.dark .dot-pattern {
+  background-image: radial-gradient(#000000 1px, transparent 1px);
 }
 
-.card1:hover {
-  cursor: pointer;
-  scale: 1.1;
-  background-color: #0077b5;
+/* Faded vignette mask */
+.dot-mask {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgb(3, 3, 3);
+  /* fade out toward edges */
+  -webkit-mask-image: radial-gradient(
+    ellipse at center,
+    transparent 20%,
+    black 100%
+  );
+  mask-image: radial-gradient(ellipse at center, transparent 20%, black 100%);
 }
 
-.card1:hover .linkedin {
-  fill: white;
-}
-
-.card2:hover {
-  cursor: pointer;
-  scale: 1.1;
-  background-color: #ff0004;
-}
-
-.card2:hover .gmail {
-  fill: white;
-}
-
-.card3:hover {
-  cursor: pointer;
-  scale: 1.1;
+.dark .dot-mask {
   background-color: black;
-}
-
-.card3:hover .github {
-  fill: white;
-}
-
-.card4:hover {
-  cursor: pointer;
-  scale: 1.1;
-  /* background-color: #bd39cc; */
-  background: #833ab4;
-  background: linear-gradient(30deg, #833ab4, #fd1d1d, #fcb045);
-}
-
-.card4:hover .instagram {
-  fill: white;
 }
