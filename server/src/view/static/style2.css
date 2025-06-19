@@ -563,6 +563,7 @@ body.show-settings #settings-panel {
   align-items: center;
   justify-content: center;
   z-index: 10;
+  color: #d4d4d4;
 }
 
 #subtitles {
@@ -987,8 +988,8 @@ button:active {
   border-radius: 9999px;
   background: linear-gradient(
     144deg,
-    rgba(175, 64, 255, 0.3),
-    rgba(229, 229, 70, 0.3)
+    rgba(175, 64, 255, 0.608),
+    rgba(229, 229, 70, 0.618)
   );
   animation: rotate 1.5s linear infinite;
 }
