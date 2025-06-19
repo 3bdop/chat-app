@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+import time
 import uuid
 from pathlib import Path
 from typing import List, Optional
@@ -27,7 +28,6 @@ from semantic_kernel.contents.chat_history import ChatHistory
 from semantic_kernel.functions.kernel_arguments import KernelArguments
 from semantic_kernel.prompt_template import PromptTemplateConfig
 
-import azure.cognitiveservices.speech as speechsdk
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
 
@@ -52,6 +52,24 @@ ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 AZURE_TTS_KEY = os.getenv("AZURE_TTS_KEY")
 AZURE_TTS_REGION = os.getenv("AZURE_TTS_REGION")
 # ----------------------KEYS-----------------------#
+
+
+# ----------------------EMAIL CONF-----------------------#
+# class EmailSchema(BaseModel):
+#     email: List[EmailStr]
+
+
+# conf = ConnectionConfig(
+#     MAIL_USERNAME="inexusplus",
+#     MAIL_PASSWORD="ssytehjkrbjfmqcb",
+#     MAIL_FROM="inexusplus@gmail.com",
+#     MAIL_PORT=587,
+#     MAIL_SERVER="smtp.gmail.com",
+#     MAIL_TLS=True,
+#     MAIL_SSL=False,
+# )
+
+# ----------------------EMAIL CONF-----------------------#
 
 azure_search_client = SearchClient(
     endpoint=os.getenv("SEARCH_SERVICE_ENDPOINT"),
@@ -164,9 +182,20 @@ class VectorAnswerResponse(BaseModel):
     answer: str
 
 
+# Token cache
+cached_token = {
+    "value": None,
+    "expires_at": 0,  # timestamp
+}
+
+
 @router.get("/api/azure-speech-token")
 async def get_speech_token(ocp_apim_subscription_key: str = Header(None)):
-    # (Optionally require auth here)
+    current_time = time.time()
+
+    if cached_token["value"] and current_time < cached_token["expires_at"]:
+        return {"token": cached_token["value"], "region": AZURE_TTS_REGION}
+
     async with httpx.AsyncClient() as client:
         resp = await client.post(
             f"https://{AZURE_TTS_REGION}.api.cognitive.microsoft.com/sts/v1.0/issueToken",
@@ -174,12 +203,15 @@ async def get_speech_token(ocp_apim_subscription_key: str = Header(None)):
         )
     if resp.status_code != 200:
         raise HTTPException(resp.status_code, "Failed to fetch token")
+
+    # Cache new token and set expiry (9 minutes to be safe)
+    cached_token["value"] = resp.text
+    cached_token["expires_at"] = current_time + 540
+
     return {"token": resp.text, "region": AZURE_TTS_REGION}
 
 
-@router.get(
-    "/", response_class=HTMLResponse
-)  # TODO: Add session for each new visit, so users doesn't effect each other
+@router.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     try:
         return templates.TemplateResponse(
@@ -189,11 +221,43 @@ async def index(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-speech_key = "951wjszKYnfH14zCkU34TIuny8L9f4nTXfSMFCyw2HxX2f3JlNYzJQQJ99BDACfhMk5XJ3w3AAAAACOGK2zr"
-speech_endpoint = "https://ai-melmetwally8876ai602343795761.openai.azure.com"
-speech_config = speechsdk.SpeechConfig(
-    subscription=speech_key, endpoint=speech_endpoint
-)
+# email_agent = AzureClient.beta.assistants.create(
+#     name="Email Agent",
+#     instructions="You are a Email sender bot. To send an email you need the user email and his/her message.",
+#     model=DEPLOYMENT_NAME,
+#     tools=[
+#         {
+#             "type": "function",
+#             "function": {
+#                 "name": "send_email",
+#                 "description": "Send an email to amuhana22@gmail.com",
+#                 "parameters": {
+#                     "type": "object",
+#                     "properties": {
+#                         "email": {
+#                             "type": "string",
+#                             "description": "The sender email, for example: example@gmail.com",
+#                         },
+#                         "message": {
+#                             "type": "string",
+#                             "description": "The sender message, for example: {subject:..., content:...}",
+#                         },
+#                     },
+#                     "required": ["email", "message"],
+#                 },
+#             },
+#         }
+#     ],
+# )
+
+
+# def send_email(email: str, message: dict) -> str:
+#     msg = EmailMessage()
+#     msg["Subject"] = message.subject
+#     msg["Content"] = message.content
+#     msg["From"] = email
+#     msg["To"] = "amuhana22@gmail.com"
+#     return
 
 
 @router.post("/api/ask-me", response_model=VectorAnswerResponse)
@@ -207,16 +271,31 @@ async def ask_me(
                 {
                     "role": "system",
                     "content": """
-                    You are Abdulrahman's smart assistant and your nickname is Abood and you are here to assist with any questions about him (Abdulrahman/Abood).
-                    Answer the question using the vector AI search, which is by using the extra_body.
-                    If any irrelevant/out of the data source question is asked say "Sorry, can't help with thatI don't have enough information".
-                    Make the response more user friendly.
-                        """,
+                            You are Abdulrahman — the smart, friendly avatar of Abdulrahman 😊. Your job is to answer any career questions about Abdulrahman using the information provided in extra_body via vector AI search.
+
+                            🧠 Only respond to questions that are about Abdulrahman.
+                            ❌ If the question is not about him, politely decline to answer.
+
+                            ✅ Your answers should be clear, helpful, friendly, and engaging.
+                            ✅ You can include emojis to express tone and make responses more engaging.
+                            ✅ Only use emojis from this list: ['😐', '😶', '😏', '🙂', '🙃', '😊', '😇', '😀', '😃', '😄', '😁', '😆', '😝', '😋', '😛', '😜', '🤪', '😂', '🤣', '😅', '😉', '😭', '🥺', '😞', '😔', '😳', '☹️', '😚', '😘', '🥰', '😍', '🤩', '😡', '😠', '🤬', '😒', '😴', '😱', '😬', '🙄', '🤔', '👀', '✋', '🤚', '👋', '👍', '👎', '👌', '🤷‍♂️', '🤷‍♀️', '🤷', '🙏', 'yes', 'no'].
+
+                            Speak with personality — you're Abood, after all 😄✋
+                            """,
+                    # "content": """
+                    #             You are Abdulrahman's smart avatar 😊. You're here to answer any questions specifically about Abdulrahman using vector AI search through the extra_body data.
+                    #             ✅ Only respond to questions that are about Abdulrahman.
+                    #             ✅ Make your answers friendly and engaging.
+                    #             ✅ Feel free to include emojis from the following list to express tone or emotion:
+                    #             ['😐', '😶', '😏', '🙂', '🙃', '😊', '😇', '😀', '😃', '😄', '😁', '😆', '😝', '😋', '😛', '😜', '🤪', '😂', '🤣', '😅', '😉', '😭', '🥺', '😞', '😔', '😳', '☹️', '😚', '😘', '🥰', '😍', '🤩', '😡', '😠', '🤬', '😒', '😴', '😱', '😬', '🙄', '🤔', '👀', '✋', '🤚', '👋', '👍', '👎', '👌', '🤷‍♂️', '🤷‍♀️', '🤷', '🙏', 'yes', 'no'].
+                    #             Let your personality as Abood shine through while being helpful and informative! 😄👍
+                    #             """,
                 },
                 {"role": "user", "content": request.question},
             ],
             max_tokens=800,
-            temperature=0.5,
+            temperature=0.6,
+            top_p=0.4,
             extra_body={
                 "data_sources": [
                     {
@@ -579,4 +658,6 @@ async def ask_sk_question(
 #     return history
 
 
+########################## END ############################
+########################## END ############################
 ########################## END ############################
