@@ -4,8 +4,11 @@ import json
 import logging
 import os
 import re
+import smtplib
 import time
 import uuid
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from pathlib import Path
 from typing import List, Optional
 
@@ -201,6 +204,7 @@ async def get_speech_token(ocp_apim_subscription_key: str = Header(None)):
             f"https://{AZURE_TTS_REGION}.api.cognitive.microsoft.com/sts/v1.0/issueToken",
             headers={"Ocp-Apim-Subscription-Key": AZURE_TTS_KEY},
         )
+        print(f"token req: {resp}")
     if resp.status_code != 200:
         raise HTTPException(resp.status_code, "Failed to fetch token")
 
@@ -221,43 +225,110 @@ async def index(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# email_agent = AzureClient.beta.assistants.create(
-#     name="Email Agent",
-#     instructions="You are a Email sender bot. To send an email you need the user email and his/her message.",
-#     model=DEPLOYMENT_NAME,
-#     tools=[
-#         {
-#             "type": "function",
-#             "function": {
-#                 "name": "send_email",
-#                 "description": "Send an email to amuhana22@gmail.com",
-#                 "parameters": {
-#                     "type": "object",
-#                     "properties": {
-#                         "email": {
-#                             "type": "string",
-#                             "description": "The sender email, for example: example@gmail.com",
-#                         },
-#                         "message": {
-#                             "type": "string",
-#                             "description": "The sender message, for example: {subject:..., content:...}",
-#                         },
-#                     },
-#                     "required": ["email", "message"],
-#                 },
-#             },
-#         }
-#     ],
-# )
+def send_email(email: str, message: str) -> str:
+    """
+    Send an email using SMTP
+    """
+    try:
+        # Email configuration
+        smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+        smtp_port = int(os.getenv("SMTP_PORT", "587"))
+        sender_email = os.getenv("SENDER_EMAIL")
+        sender_password = os.getenv("SENDER_PASSWORD")
+        recipient_email = "amuhana22@gmail.com"
+
+        if not sender_email or not sender_password:
+            return "Email configuration error: Missing sender credentials"
+
+        # Create message
+        msg = MIMEMultipart()
+        msg["From"] = sender_email
+        msg["To"] = recipient_email
+        msg["Subject"] = "New Contact Request via Assistant"
+
+        # Email body
+        email_body = f"""
+        New contact request from your assistant:
+        
+        From: {email}
+        Message: {message}
+        
+        ---
+        Sent via Abdulrahman's AI Assistant
+        """
+
+        msg.attach(MIMEText(email_body, "plain"))
+
+        # Send email
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, recipient_email, msg.as_string())
+        server.quit()
+
+        logger.info(f"Contact email sent successfully from {email}")
+        return "success"
+
+    except Exception as e:
+        error_msg = f"Failed to send email: {str(e)}"
+        logger.error(error_msg)
+        return "failed"
 
 
-# def send_email(email: str, message: dict) -> str:
-#     msg = EmailMessage()
-#     msg["Subject"] = message.subject
-#     msg["Content"] = message.content
-#     msg["From"] = email
-#     msg["To"] = "amuhana22@gmail.com"
-#     return
+def check_contact_intent(question: str) -> bool:
+    """
+    Check if the user wants to contact Abdulrahman
+    """
+    contact_keywords = [
+        "contact",
+        "reach out",
+        "get in touch",
+        "send message",
+        "email",
+        "connect",
+        "communicate",
+        "talk to",
+        "speak with",
+        "message abdulrahman",
+        "message abood",
+        "contact abdulrahman",
+        "contact abood",
+        "reach abdulrahman",
+        "reach abood",
+    ]
+
+    question_lower = question.lower()
+    return any(keyword in question_lower for keyword in contact_keywords)
+
+
+def extract_email_and_message(question: str) -> tuple:
+    """
+    Extract email and message from user question
+    """
+    # Look for email pattern
+    email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
+    email_match = re.search(email_pattern, question)
+    email = email_match.group() if email_match else "unknown@example.com"
+
+    # Extract message (everything after common phrases)
+    message_indicators = [
+        "message:",
+        "say:",
+        "tell him:",
+        "tell her:",
+        "content:",
+        "my message is",
+    ]
+    message = question
+
+    for indicator in message_indicators:
+        if indicator in question.lower():
+            parts = question.lower().split(indicator, 1)
+            if len(parts) > 1:
+                message = parts[1].strip()
+                break
+
+    return email, message
 
 
 @router.post("/api/ask-me", response_model=VectorAnswerResponse)
@@ -265,6 +336,18 @@ async def ask_me(
     request: QuestionRequest,
 ):
     try:
+        if check_contact_intent(request.question):
+            email, message = extract_email_and_message(request.question)
+
+            email_res = send_email(email, message)
+
+            if email_res == "success":
+                contact_response = "Great! I've successfully sent your message to Abdulrahman at amuhana22@gmail.com. He should receive your contact request shortly and will get back to you."
+            else:
+                contact_response = "I apologize, but there was an issue sending your message to Abdulrahman. Please try again later or contact him directly at amuhana22@gmail.com."
+
+            return VectorAnswerResponse(answer=contact_response)
+
         response = AzureClient.chat.completions.create(
             model=DEPLOYMENT_NAME,
             messages=[
@@ -335,6 +418,36 @@ async def ask_me(
         raise HTTPException(
             status_code=500, detail=f"Failed to process question: {str(e)}"
         )
+
+
+email_agent = AzureClient.beta.assistants.create(
+    name="Email Agent",
+    instructions="You are a Email sender bot. To send an email you need the user email and his/her message.",
+    model=DEPLOYMENT_NAME,
+    tools=[
+        {
+            "type": "function",
+            "function": {
+                "name": "send_email",
+                "description": "Send an email to amuhana22@gmail.com",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "email": {
+                            "type": "string",
+                            "description": "The sender email, for example: example@gmail.com",
+                        },
+                        "message": {
+                            "type": "string",
+                            "description": "The sender message, for example: {subject:..., content:...}",
+                        },
+                    },
+                    "required": ["email", "message"],
+                },
+            },
+        }
+    ],
+)
 
 
 @router.post("/api/ask", response_model=VectorAnswerResponse)
