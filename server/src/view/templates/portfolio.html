@@ -15,7 +15,7 @@
       }
     }
   </script>
-
+  <script src="https://unpkg.com/animated-cursor@1.1.1/dist/index.umd.js"></script>
   <script
     src="https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk@latest/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js"></script>
 
@@ -30,6 +30,10 @@
 <body>
   <div class="dot-pattern"></div>
   <div class="dot-mask"></div>
+  <!-- <div id="cursor">
+    <div id="cursor-outer"></div>
+    <div id="cursor-inner"></div>
+  </div> -->
   <!-- 3D Avatar -->
   <div id="avatar-container">
     <div id="avatar"></div>
@@ -60,9 +64,8 @@
     </button>
     <button id="settings-button">Settings</button>
   </div>
-
-  <!-- Collapsible Settings Panel -->
   <div id="settings-panel">
+    <!-- Collapsible Settings Panel -->
     <!-- <label for="azure-key">Azure Key</label>
     <input id="azure-key" type="text" aria-label="Azure key" placeholder="Enter Azure Key">
 
@@ -156,7 +159,20 @@
   </div>
 
   <!-- Loading or error display -->
-  <div id="loading"></div>
+  <!-- <div id="loading"></div> -->
+  <div class="loader" id="loading">
+    <div class="loader-inner">
+      <div class="loader-block"></div>
+      <div class="loader-block"></div>
+      <div class="loader-block"></div>
+      <div class="loader-block"></div>
+      <div class="loader-block"></div>
+      <div class="loader-block"></div>
+      <div class="loader-block"></div>
+      <div class="loader-block"></div>
+    </div>
+  </div>
+
 </body>
 
 </html>
