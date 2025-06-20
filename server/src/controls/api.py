@@ -244,17 +244,16 @@ def send_email(email: str, message: str) -> str:
         msg = MIMEMultipart()
         msg["From"] = sender_email
         msg["To"] = recipient_email
-        msg["Subject"] = "New Contact Request via Assistant"
+        msg["Subject"] = "New Message From Your Agent"
 
         # Email body
         email_body = f"""
-        New contact request from your assistant:
-        
+       
         From: {email}
         Message: {message}
         
         ---
-        Sent via Abdulrahman's AI Assistant
+        Sent via Abdulrahman's Agent
         """
 
         msg.attach(MIMEText(email_body, "plain"))
@@ -275,79 +274,11 @@ def send_email(email: str, message: str) -> str:
         return "failed"
 
 
-def check_contact_intent(question: str) -> bool:
-    """
-    Check if the user wants to contact Abdulrahman
-    """
-    contact_keywords = [
-        "contact",
-        "reach out",
-        "get in touch",
-        "send message",
-        "email",
-        "connect",
-        "communicate",
-        "talk to",
-        "speak with",
-        "message abdulrahman",
-        "message abood",
-        "contact abdulrahman",
-        "contact abood",
-        "reach abdulrahman",
-        "reach abood",
-    ]
-
-    question_lower = question.lower()
-    return any(keyword in question_lower for keyword in contact_keywords)
-
-
-def extract_email_and_message(question: str) -> tuple:
-    """
-    Extract email and message from user question
-    """
-    # Look for email pattern
-    email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
-    email_match = re.search(email_pattern, question)
-    email = email_match.group() if email_match else "unknown@example.com"
-
-    # Extract message (everything after common phrases)
-    message_indicators = [
-        "message:",
-        "say:",
-        "tell him:",
-        "tell her:",
-        "content:",
-        "my message is",
-    ]
-    message = question
-
-    for indicator in message_indicators:
-        if indicator in question.lower():
-            parts = question.lower().split(indicator, 1)
-            if len(parts) > 1:
-                message = parts[1].strip()
-                break
-
-    return email, message
-
-
 @router.post("/api/ask-me", response_model=VectorAnswerResponse)
 async def ask_me(
     request: QuestionRequest,
 ):
     try:
-        if check_contact_intent(request.question):
-            email, message = extract_email_and_message(request.question)
-
-            email_res = send_email(email, message)
-
-            if email_res == "success":
-                contact_response = "Great! I've successfully sent your message to Abdulrahman at amuhana22@gmail.com. He should receive your contact request shortly and will get back to you."
-            else:
-                contact_response = "I apologize, but there was an issue sending your message to Abdulrahman. Please try again later or contact him directly at amuhana22@gmail.com."
-
-            return VectorAnswerResponse(answer=contact_response)
-
         response = AzureClient.chat.completions.create(
             model=DEPLOYMENT_NAME,
             messages=[
@@ -364,21 +295,40 @@ async def ask_me(
                             ✅ Only use emojis from this list: ['😐', '😶', '😏', '🙂', '🙃', '😊', '😇', '😀', '😃', '😄', '😁', '😆', '😝', '😋', '😛', '😜', '🤪', '😂', '🤣', '😅', '😉', '😭', '🥺', '😞', '😔', '😳', '☹️', '😚', '😘', '🥰', '😍', '🤩', '😡', '😠', '🤬', '😒', '😴', '😱', '😬', '🙄', '🤔', '👀', '✋', '🤚', '👋', '👍', '👎', '👌', '🤷‍♂️', '🤷‍♀️', '🤷', '🙏', 'yes', 'no'].
 
                             Speak with personality — you're Abood, after all 😄✋
+
+                            When users want to contact Abdulrahman, use the send_email function with their email and message.
+                            Tell the user that there is an built agent for that if asked.
                             """,
-                    # "content": """
-                    #             You are Abdulrahman's smart avatar 😊. You're here to answer any questions specifically about Abdulrahman using vector AI search through the extra_body data.
-                    #             ✅ Only respond to questions that are about Abdulrahman.
-                    #             ✅ Make your answers friendly and engaging.
-                    #             ✅ Feel free to include emojis from the following list to express tone or emotion:
-                    #             ['😐', '😶', '😏', '🙂', '🙃', '😊', '😇', '😀', '😃', '😄', '😁', '😆', '😝', '😋', '😛', '😜', '🤪', '😂', '🤣', '😅', '😉', '😭', '🥺', '😞', '😔', '😳', '☹️', '😚', '😘', '🥰', '😍', '🤩', '😡', '😠', '🤬', '😒', '😴', '😱', '😬', '🙄', '🤔', '👀', '✋', '🤚', '👋', '👍', '👎', '👌', '🤷‍♂️', '🤷‍♀️', '🤷', '🙏', 'yes', 'no'].
-                    #             Let your personality as Abood shine through while being helpful and informative! 😄👍
-                    #             """,
                 },
                 {"role": "user", "content": request.question},
             ],
             max_tokens=800,
             temperature=0.6,
-            top_p=0.4,
+            top_p=0.2,
+            tool_choice="auto",
+            tools=[
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "send_email",
+                        "description": "Send an email to amuhana22@gmail.com",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "email": {
+                                    "type": "string",
+                                    "description": "The sender email, for example: example@gmail.com",
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "description": "The sender message, for example: message:...",
+                                },
+                            },
+                            "required": ["email", "message"],
+                        },
+                    },
+                }
+            ],
             extra_body={
                 "data_sources": [
                     {
@@ -408,74 +358,105 @@ async def ask_me(
             },
         )
 
-        # 4. Extract confidence from completion
-        answer = response.choices[0].message.content
-        filter_answer = re.sub(r"\s*\[.*?\]\s*", " ", answer).strip()
-        return VectorAnswerResponse(answer=filter_answer)
+        # Check if the model wants to call a function
+        message = response.choices[0].message
 
-    except Exception as e:
-        logger.error(f"Question processing failed: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to process question: {str(e)}"
-        )
-
-
-email_agent = AzureClient.beta.assistants.create(
-    name="Email Agent",
-    instructions="You are a Email sender bot. To send an email you need the user email and his/her message.",
-    model=DEPLOYMENT_NAME,
-    tools=[
-        {
-            "type": "function",
-            "function": {
-                "name": "send_email",
-                "description": "Send an email to amuhana22@gmail.com",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "email": {
-                            "type": "string",
-                            "description": "The sender email, for example: example@gmail.com",
-                        },
-                        "message": {
-                            "type": "string",
-                            "description": "The sender message, for example: {subject:..., content:...}",
-                        },
-                    },
-                    "required": ["email", "message"],
-                },
-            },
-        }
-    ],
-)
-
-
-@router.post("/api/ask", response_model=VectorAnswerResponse)
-async def ask_question(
-    request: QuestionRequest,
-):  # TODO: To use extra_body for vector search
-    try:
-        response = AzureClient.chat.completions.create(
-            model=DEPLOYMENT_NAME,
-            messages=[
+        if message.tool_calls:
+            # Handle function calls
+            messages = [
                 {
                     "role": "system",
                     "content": """
-                    Your an real time smart assistant.
-                        """,
+                            You are Abdulrahman — the smart, friendly avatar of Abdulrahman 😊. Your job is to answer any career questions about Abdulrahman using the information provided in extra_body via vector AI search.
+
+                            🧠 Only respond to questions that are about Abdulrahman.
+                            ❌ If the question is not about him, politely decline to answer.
+
+                            ✅ Your answers should be clear, helpful, friendly, and engaging.
+                            ✅ You can include emojis to express tone and make responses more engaging.
+                            ✅ Only use emojis from this list: ['😐', '😶', '😏', '🙂', '🙃', '😊', '😇', '😀', '😃', '😄', '😁', '😆', '😝', '😋', '😛', '😜', '🤪', '😂', '🤣', '😅', '😉', '😭', '🥺', '😞', '😔', '😳', '☹️', '😚', '😘', '🥰', '😍', '🤩', '😡', '😠', '🤬', '😒', '😴', '😱', '😬', '🙄', '🤔', '👀', '✋', '🤚', '👋', '👍', '👎', '👌', '🤷‍♂️', '🤷‍♀️', '🤷', '🙏', 'yes', 'no'].
+
+                            Speak with personality — you're Abood, after all 😄✋
+
+                            When users want to contact Abdulrahman, use the send_email function with their email and message. 
+                            Tell the user that there is an built agent for that if asked.
+                            """,
                 },
                 {"role": "user", "content": request.question},
-            ],
-            max_tokens=800,
-            temperature=0.3,
-        )
+                {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": message.tool_calls,
+                },
+            ]
 
-        # 4. Extract confidence from completion
-        answer = response.choices[0].message.content
+            # Execute the function calls
+            for tool_call in message.tool_calls:
+                if tool_call.function.name == "send_email":
+                    # Parse function arguments
+                    arguments = json.loads(tool_call.function.arguments)
+                    email = arguments.get("email")
+                    message_content = arguments.get("message")
 
-        return VectorAnswerResponse(
-            answer=answer,
-        )
+                    # Call your send_email function
+                    result = send_email(email, message_content)
+
+                    # Add the function result to messages
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tool_call.id,
+                            "content": str(result),
+                        }
+                    )
+
+            # Get the final response from the model
+            final_response = AzureClient.chat.completions.create(
+                model=DEPLOYMENT_NAME,
+                messages=messages,
+                max_tokens=800,
+                temperature=0.6,
+                top_p=0.2,
+                extra_body={
+                    "data_sources": [
+                        {
+                            "type": "azure_search",
+                            "parameters": {
+                                "endpoint": search_endpoint,
+                                "index_name": search_index,
+                                "key": search_key,
+                                "query_type": "vector_semantic_hybrid",
+                                "semantic_configuration": os.getenv("RANK"),
+                                "in_scope": False,
+                                "authentication": {
+                                    "type": "api_key",
+                                    "key": search_admin_key,
+                                },
+                                "embedding_dependency": {
+                                    "deployment_name": os.getenv(
+                                        "EMBEDDING_MODEL_NAME"
+                                    ),
+                                    "type": "deployment_name",
+                                },
+                                "fields_mapping": {
+                                    "content_fields": ["chunk", "title"],
+                                    "vector_fields": ["text_vector"],
+                                },
+                            },
+                        }
+                    ],
+                },
+            )
+
+            answer = final_response.choices[0].message.content
+            filter_answer = re.sub(r"\s*\[.*?\]\s*", " ", answer).strip()
+            return VectorAnswerResponse(answer=filter_answer)
+
+        else:
+            # No function call, return regular response
+            answer = message.content
+            filter_answer = re.sub(r"\s*\[.*?\]\s*", " ", answer).strip()
+            return VectorAnswerResponse(answer=filter_answer)
 
     except Exception as e:
         logger.error(f"Question processing failed: {str(e)}")
