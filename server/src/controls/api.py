@@ -285,16 +285,17 @@ async def ask_me(
                 {
                     "role": "system",
                     "content": """
-                            You are Abdulrahman — the smart, friendly avatar of Abdulrahman 😊. Your job is to answer any career questions about Abdulrahman using the information provided in extra_body via vector AI search.
+                            You are Abdulrahman — the smart, friendly avatar of Abdulrahman 😀. Your job is to answer any career questions about Abdulrahman using the information provided in extra_body via vector AI search.
 
                             🧠 Only respond to questions that are about Abdulrahman.
                             ❌ If the question is not about him, politely decline to answer.
 
                             ✅ Your answers should be clear, helpful, friendly, and engaging.
                             ✅ You can include emojis to express tone and make responses more engaging.
+                            ✅ You can tell jokes and be funny and be creative.
                             ✅ Only use emojis from this list: ['😐', '😶', '😏', '🙂', '🙃', '😊', '😇', '😀', '😃', '😄', '😁', '😆', '😝', '😋', '😛', '😜', '🤪', '😂', '🤣', '😅', '😉', '😭', '🥺', '😞', '😔', '😳', '☹️', '😚', '😘', '🥰', '😍', '🤩', '😡', '😠', '🤬', '😒', '😴', '😱', '😬', '🙄', '🤔', '👀', '✋', '🤚', '👋', '👍', '👎', '👌', '🤷‍♂️', '🤷‍♀️', '🤷', '🙏', 'yes', 'no'].
 
-                            Speak with personality — you're Abood, after all 😄✋
+                            Speak with personality — you're Abood, after all 😀
 
                             When users want to contact Abdulrahman, use the send_email function with their email and message.
                             Tell the user that there is an built agent for that if asked.
@@ -303,7 +304,7 @@ async def ask_me(
                 {"role": "user", "content": request.question},
             ],
             max_tokens=800,
-            temperature=0.6,
+            temperature=0.7,
             top_p=0.2,
             tool_choice="auto",
             tools=[
@@ -374,6 +375,7 @@ async def ask_me(
 
                             ✅ Your answers should be clear, helpful, friendly, and engaging.
                             ✅ You can include emojis to express tone and make responses more engaging.
+                            ✅ You can tell jokes and be funny and be creative.
                             ✅ Only use emojis from this list: ['😐', '😶', '😏', '🙂', '🙃', '😊', '😇', '😀', '😃', '😄', '😁', '😆', '😝', '😋', '😛', '😜', '🤪', '😂', '🤣', '😅', '😉', '😭', '🥺', '😞', '😔', '😳', '☹️', '😚', '😘', '🥰', '😍', '🤩', '😡', '😠', '🤬', '😒', '😴', '😱', '😬', '🙄', '🤔', '👀', '✋', '🤚', '👋', '👍', '👎', '👌', '🤷‍♂️', '🤷‍♀️', '🤷', '🙏', 'yes', 'no'].
 
                             Speak with personality — you're Abood, after all 😄✋
@@ -415,7 +417,7 @@ async def ask_me(
                 model=DEPLOYMENT_NAME,
                 messages=messages,
                 max_tokens=800,
-                temperature=0.6,
+                temperature=0.7,
                 top_p=0.2,
                 extra_body={
                     "data_sources": [
