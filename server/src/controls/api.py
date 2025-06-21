@@ -278,6 +278,7 @@ def send_email(email: str, message: str) -> str:
 async def ask_me(
     request: QuestionRequest,
 ):
+    logger.info(f"Question: {request.question}")
     try:
         response = AzureClient.chat.completions.create(
             model=DEPLOYMENT_NAME,
@@ -451,13 +452,13 @@ async def ask_me(
             )
 
             answer = final_response.choices[0].message.content
-            filter_answer = re.sub(r"\s*\[.*?\]\s*", " ", answer).strip()
+            filter_answer = re.sub(r"\s*\[.*?\]\s*|[#*]", " ", answer).strip()
             return VectorAnswerResponse(answer=filter_answer)
 
         else:
             # No function call, return regular response
             answer = message.content
-            filter_answer = re.sub(r"\s*\[.*?\]\s*", " ", answer).strip()
+            filter_answer = re.sub(r"\s*\[.*?\]\s*|[#*]", " ", answer).strip()
             return VectorAnswerResponse(answer=filter_answer)
 
     except Exception as e:
