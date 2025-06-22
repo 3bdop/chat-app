@@ -364,7 +364,6 @@ async def ask_me(
         message = response.choices[0].message
 
         if message.tool_calls:
-            # Handle function calls
             messages = [
                 {
                     "role": "system",
@@ -413,7 +412,6 @@ async def ask_me(
                         }
                     )
 
-            # Get the final response from the model
             final_response = AzureClient.chat.completions.create(
                 model=DEPLOYMENT_NAME,
                 messages=messages,
@@ -456,7 +454,6 @@ async def ask_me(
             return VectorAnswerResponse(answer=filter_answer)
 
         else:
-            # No function call, return regular response
             answer = message.content
             filter_answer = re.sub(r"\s*\[.*?\]\s*|[#*]", " ", answer).strip()
             return VectorAnswerResponse(answer=filter_answer)
