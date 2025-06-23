@@ -225,6 +225,16 @@ async def index(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/demo", response_class=HTMLResponse)
+async def demo(request: Request):
+    try:
+        return templates.TemplateResponse(
+            name="demo.html", context={"request": request}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 def send_email(email: str, message: str) -> str:
     """
     Send an email using SMTP
