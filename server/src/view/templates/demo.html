@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>3bdop Smart Portfolio</title>
+    <link rel="icon" type="image/x-icon" href="https://models.readyplayer.me/671fba5095f66d10f33251c6.png">
+    <link rel="stylesheet" href="/static/style2.css">
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js/+esm",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+        "talkinghead": "https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.5/modules/talkinghead.mjs"
+      }
+    }
+  </script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/animated-cursor@1.1.1/dist/index.umd.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk@latest/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js"></script>
+
+    <script type="module" src="/static/js/demo.js"></script>
+    <script>
+        function goToLink(url) {
+            window.open(url, '_blank');
+        }
+    </script>
+</head>
+
+<body>
+    <div class="dot-pattern"></div>
+    <div class="dot-mask"></div>
+    <!-- <div id="cursor">
+    <div id="cursor-outer"></div>
+    <div id="cursor-inner"></div>
+  </div> -->
+    <!-- 3D Avatar -->
+    <div id="avatar-container">
+        <div id="avatar"></div>
+    </div>
+    <div id="subtitles"></div>
+
+    <!-- Controls at the top -->
+    <div id="controls">
+        <input id="text" type="text" placeholder="Type here..." />
+        <!-- From Uiverse.io by Ashon-G -->
+        <!-- <button id="speak">Send</button> -->
+        <button id="speak" class="uiverse">
+            <div class="wrapper">
+                <span id="btn-txt">Ask</span>
+                <div class="circle circle-12"></div>
+                <div class="circle circle-11"></div>
+                <div class="circle circle-10"></div>
+                <div class="circle circle-9"></div>
+                <div class="circle circle-8"></div>
+                <div class="circle circle-7"></div>
+                <div class="circle circle-6"></div>
+                <div class="circle circle-5"></div>
+                <div class="circle circle-4"></div>
+                <div class="circle circle-3"></div>
+                <div class="circle circle-2"></div>
+                <div class="circle circle-1"></div>
+            </div>
+        </button>
+        <button id="settings-button">Settings</button>
+    </div>
+    <div id="settings-panel">
+        <fieldset id="view">
+            <legend>Avatar View</legend>
+            <label>
+                <input type="radio" name="view_type" value="full">
+                Full
+            </label>
+            <label>
+                <input type="radio" name="view_type" value="mid" checked>
+                Mid
+            </label>
+            <label>
+                <input type="radio" name="view_type" value="upper">
+                Upper
+            </label>
+            <label>
+                <input type="radio" name="view_type" value="head">
+                Head
+            </label>
+        </fieldset>
+    </div>
+    <div class="assistant-box">
+        <h1>Try My Agent
+            <img align="center" src="https://fonts.gstatic.com/s/e/notoemoji/latest/1fae1/512.gif" alt="🫡" width="32"
+                height="32">
+        </h1>
+        <h3>
+            How to use it?
+        </h3>
+        <p>Just give me your email and your message — <strong>I’ll do the rest!</strong> <img
+                src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f3af/512.gif" alt="🎯" width="32" height="32"
+                align="center"></p>
+    </div>
+    <div class="action-wrap">
+        <button class="action" type="button" onclick="goToLink('https://linkedin.com/in/3bdop')">
+            <svg class="action-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 0h-14c-2.76 0-5 2.24-5 5v14c0 2.76 
+           2.24 5 5 5h14c2.76 0 5-2.24 
+           5-5v-14c0-2.76-2.24-5-5-5zm-11 
+           19h-3v-10h3v10zm-1.5-11.28c-.97 
+           0-1.75-.79-1.75-1.75s.79-1.75 
+           1.75-1.75 1.75.79 
+           1.75 1.75-.79 1.75-1.75 
+           1.75zm13.5 11.28h-3v-5.5c0-1.1-.9-2-2-2s-2 
+           .9-2 2v5.5h-3v-10h3v1.28c.56-.86 
+           1.53-1.28 2.5-1.28 1.93 0 
+           3.5 1.57 3.5 3.5v6.5z" />
+            </svg>
+
+            <span class="action-content" data-content="linkedin"></span>
+        </button>
+
+        <button class="action" type="button" onclick="goToLink('https://github.com/3bdop')">
+            <svg class="action-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linejoin="round"
+                stroke-linecap="round" stroke-width="2" stroke="currentColor" fill="none">
+                <path
+                    d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5">
+                </path>
+            </svg>
+            <span class="action-content" data-content="github"></span>
+        </button>
+
+        <button class="action" type="button" onclick="goToLink('mailto:amuhana22@gmail.com')">
+            <svg class="action-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+                <polyline points="3,7 12,13 21,7" />
+            </svg>
+
+            <span class="action-content" data-content="gmail"></span>
+        </button>
+        <button class="action" type="button" onclick="goToLink('https://instagram.com/3bdop')">
+            <svg class="action-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                <line x1="17.5" y1="6.5" x2="17.5" y2="6.5" />
+            </svg>
+            <span class="action-content" data-content="instagram"></span>
+        </button>
+
+        <div class="backdrop"></div>
+    </div>
+
+    <!-- Loading or error display -->
+    <!-- <div id="loading"></div> -->
+    <div class="loader" id="loading">
+        <div class="loader-inner">
+            <div class="loader-block"></div>
+            <div class="loader-block"></div>
+            <div class="loader-block"></div>
+            <div class="loader-block"></div>
+            <div class="loader-block"></div>
+            <div class="loader-block"></div>
+            <div class="loader-block"></div>
+            <div class="loader-block"></div>
+        </div>
+    </div>
+
+    <div id="emojis" class="rowWrap">
+        <div class="emoji">😐</div>
+        <div class="emoji">😶</div>
+        <div class="emoji">😏</div>
+        <div class="emoji">🙂</div>
+        <div class="emoji">🙃</div>
+        <div class="emoji">😊</div>
+        <div class="emoji">😇</div>
+        <div class="emoji">😀</div>
+        <div class="emoji">😃</div>
+        <div class="emoji">😄</div>
+        <div class="emoji">😁</div>
+        <div class="emoji">😆</div>
+        <div class="emoji">😝</div>
+        <div class="emoji">😋</div>
+        <div class="emoji">😛</div>
+        <div class="emoji">😜</div>
+        <div class="emoji">🤪</div>
+        <div class="emoji">😂</div>
+        <div class="emoji">🤣</div>
+        <div class="emoji">😅</div>
+        <div class="emoji">😉</div>
+        <div class="emoji">😭</div>
+        <div class="emoji">🥺</div>
+        <div class="emoji">😞</div>
+        <div class="emoji">😔</div>
+        <div class="emoji">😳</div>
+        <div class="emoji">☹️</div>
+        <div class="emoji">😚</div>
+        <div class="emoji">😘</div>
+        <div class="emoji">🥰</div>
+        <div class="emoji">😍</div>
+        <div class="emoji">🤩</div>
+        <div class="emoji">😡</div>
+        <div class="emoji">😠</div>
+        <div class="emoji">🤬</div>
+        <div class="emoji">😒</div>
+        <div class="emoji">😱</div>
+        <div class="emoji">😬</div>
+        <div class="emoji">🙄</div>
+        <div class="emoji">🤔</div>
+        <div class="emoji">👀</div>
+        <div class="emoji">😴</div>
+        <div class="emoji">✋</div>
+        <div class="emoji">🤚</div>
+        <div class="emoji">👋</div>
+        <div class="emoji">👍</div>
+        <div class="emoji">👎</div>
+        <div class="emoji">👌</div>
+        <div class="emoji">🤷‍♂️</div>
+        <div class="emoji">🤷‍♀️</div>
+        <div class="emoji">🤷</div>
+        <div class="emoji">🙏</div>
+        <div class="emoji">yes</div>
+        <div class="emoji">no</div>
+    </div>
+
+
+    <button id="reset" class="reset">Reset</button>
+    <div id="morphs" class="column">
+        <div class="row morph">
+            <div class="text label">bodyRotateX</div><input id="bodyRotateX" type="range" min="-0.5" max="0.5"
+                step="0.05">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">bodyRotateY</div><input id="bodyRotateY" type="range" min="-0.5" max="0.5"
+                step="0.05">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">bodyRotateZ</div><input id="bodyRotateZ" type="range" min="-0.5" max="0.5"
+                step="0.05">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">browDownLeft</div><input id="browDownLeft" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">browDownRight</div><input id="browDownRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">browInnerUp</div><input id="browInnerUp" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">browOuterUpLeft</div><input id="browOuterUpLeft" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">browOuterUpRight</div><input id="browOuterUpRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">cheekPuff</div><input id="cheekPuff" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">cheekSquintLeft</div><input id="cheekSquintLeft" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">cheekSquintRight</div><input id="cheekSquintRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">chestInhale</div><input id="chestInhale" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyeBlinkLeft</div><input id="eyeBlinkLeft" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyeBlinkRight</div><input id="eyeBlinkRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyeLookDownLeft</div><input id="eyeLookDownLeft" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyeLookDownRight</div><input id="eyeLookDownRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyeLookInLeft</div><input id="eyeLookInLeft" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyeLookInRight</div><input id="eyeLookInRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyeLookOutLeft</div><input id="eyeLookOutLeft" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyeLookOutRight</div><input id="eyeLookOutRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyeLookUpLeft</div><input id="eyeLookUpLeft" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyeLookUpRight</div><input id="eyeLookUpRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyeSquintLeft</div><input id="eyeSquintLeft" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyeSquintRight</div><input id="eyeSquintRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyeWideLeft</div><input id="eyeWideLeft" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyeWideRight</div><input id="eyeWideRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyesClosed</div><input id="eyesClosed" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyesLookDown</div><input id="eyesLookDown" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyesLookUp</div><input id="eyesLookUp" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyesRotateX</div><input id="eyesRotateX" type="range" min="-1" max="1" step="0.05">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">eyesRotateY</div><input id="eyesRotateY" type="range" min="-1" max="1" step="0.05">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">handFistLeft</div><input id="handFistLeft" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">handFistRight</div><input id="handFistRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">headRotateX</div><input id="headRotateX" type="range" min="-0.5" max="0.5"
+                step="0.05">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">headRotateY</div><input id="headRotateY" type="range" min="-0.5" max="0.5"
+                step="0.05">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">headRotateZ</div><input id="headRotateZ" type="range" min="-0.5" max="0.5"
+                step="0.05">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">jawForward</div><input id="jawForward" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">jawLeft</div><input id="jawLeft" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">jawOpen</div><input id="jawOpen" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">jawRight</div><input id="jawRight" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthClose</div><input id="mouthClose" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthDimpleLeft</div><input id="mouthDimpleLeft" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthDimpleRight</div><input id="mouthDimpleRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthFrownLeft</div><input id="mouthFrownLeft" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthFrownRight</div><input id="mouthFrownRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthFunnel</div><input id="mouthFunnel" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthLeft</div><input id="mouthLeft" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthLowerDownLeft</div><input id="mouthLowerDownLeft" type="range" min="-0.1"
+                max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthLowerDownRight</div><input id="mouthLowerDownRight" type="range" min="-0.1"
+                max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthOpen</div><input id="mouthOpen" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthPressLeft</div><input id="mouthPressLeft" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthPressRight</div><input id="mouthPressRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthPucker</div><input id="mouthPucker" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthRight</div><input id="mouthRight" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthRollLower</div><input id="mouthRollLower" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthRollUpper</div><input id="mouthRollUpper" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthShrugLower</div><input id="mouthShrugLower" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthShrugUpper</div><input id="mouthShrugUpper" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthSmile</div><input id="mouthSmile" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthSmileLeft</div><input id="mouthSmileLeft" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthSmileRight</div><input id="mouthSmileRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthStretchLeft</div><input id="mouthStretchLeft" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthStretchRight</div><input id="mouthStretchRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthUpperUpLeft</div><input id="mouthUpperUpLeft" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">mouthUpperUpRight</div><input id="mouthUpperUpRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">noseSneerLeft</div><input id="noseSneerLeft" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">noseSneerRight</div><input id="noseSneerRight" type="range" min="-0.1" max="1"
+                step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">tongueOut</div><input id="tongueOut" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">viseme_CH</div><input id="viseme_CH" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">viseme_DD</div><input id="viseme_DD" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">viseme_E</div><input id="viseme_E" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">viseme_FF</div><input id="viseme_FF" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">viseme_I</div><input id="viseme_I" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">viseme_O</div><input id="viseme_O" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">viseme_PP</div><input id="viseme_PP" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">viseme_RR</div><input id="viseme_RR" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">viseme_SS</div><input id="viseme_SS" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">viseme_TH</div><input id="viseme_TH" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">viseme_U</div><input id="viseme_U" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">viseme_aa</div><input id="viseme_aa" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">viseme_kk</div><input id="viseme_kk" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">viseme_nn</div><input id="viseme_nn" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+        <div class="row morph">
+            <div class="text label">viseme_sil</div><input id="viseme_sil" type="range" min="-0.1" max="1" step="0.1">
+            <div class="text"></div>
+        </div>
+    </div>
+</body>
+
+</html>
